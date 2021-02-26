@@ -5,12 +5,15 @@
 //#include "sqlhelper.h"
 //#include "settings.h"
 //#include "environment.h"
+#include <QTextStream>
 #include <QVariant>
 #include <iostream>
 
 Work1Params Work1::params;
 
 Work1::Work1() = default;
+
+
 
 auto Work1::doWork() -> int
 {
@@ -21,8 +24,51 @@ auto Work1::doWork() -> int
     // sudo fdisk -l /dev/sdh
     // utolsó partíció utolsó szektora +1-ig írunk
     // https://stackoverflow.com/questions/22433257/windows-dd-esque-implementation-in-qt-5
+    // mngm ~$ sudo dd if=/dev/sdb of=backup.img bs=512 count=15759360 conv=fsync
+
     auto usbDrives = GetUsbDrives();
-    return 1;
+    if(usbDrives.isEmpty()) return ISEMPTY;
+    QString usbdrive = (usbDrives.count()>1)?SelectUsbDrive(usbDrives):usbDrives[0];
+    //QStringList usbDrives = {"a", "b", "c", "d"};
+    //auto usbdrive = SelectUsbDrive(usbDrives);
+    int units;
+    auto lastrec = GetLastRecord(usbdrive, &units);
+
+    zInfo(usbdrive + ": "+QString::number(lastrec+1))
+
+    return OK;
+}
+
+auto Work1::GetLastRecord(const QString& drive, int* units) -> int
+{
+    auto cmd = QStringLiteral("sudo fdisk -l %1").arg(drive);
+    int lastrec = -1;
+    auto out = com::helper::ProcessHelper::Execute(cmd);
+    if(out.exitCode) return -1;
+    if(out.stdOut.isEmpty()) return -1;
+
+    for(auto&i:out.stdOut.split('\n'))
+    {
+        if(i.startsWith(QStringLiteral("\\dev")))
+        {
+            auto j = i.split(' ');
+            bool isok;
+            auto k = j[3].toInt(&isok);
+            if(isok && k>lastrec) lastrec = k;
+        }
+        else if(units && i.startsWith(QStringLiteral("Units:")))
+        {
+            auto j = i.split('=');
+
+            auto k = j[1].split(' ');
+            bool isok;
+            auto u = k[1].toInt(&isok);
+            if(isok) *units = u;
+        }
+    }
+
+    return lastrec;
+
 }
 
 auto Work1::GetUsbDrives() -> QStringList
@@ -42,9 +88,25 @@ auto Work1::GetUsbDrives() -> QStringList
             j[2]==QLatin1String("disk")&&
             j[3]==QLatin1String("usb")&&
             j[4]==QLatin1String("1")) e.append(j[1]);
+        else if(j[0].startsWith("mmc")) e.append(j[1]);
     }
 
     return e;
+}
+
+QString Work1::SelectUsbDrive(const QStringList &usbdrives)
+{
+    int j = 1;
+    for(auto&i:usbdrives) zInfo(QString::number(j++)+": "+i);j--;
+    zInfo("select 1-"+QString::number(j))
+
+    QTextStream in(stdin);
+    auto intxt = in.readLine();
+    bool isok;
+    auto ix = intxt.toInt(&isok);
+    if(!isok) return QString();
+    if(ix<1||ix>j) return QString();
+    return usbdrives[ix-1];
 }
 
 /*

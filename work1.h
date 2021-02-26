@@ -11,14 +11,22 @@ public:
     QString projname;
 };
 
+
+
 class Work1
 {
+public:
+    enum Result : int{
+      OK=0,ISEMPTY
+    };
 public:
     Work1();
     static int doWork();
     static Work1Params params;
 
-    static QStringList GetUsbDrives();
+    static QStringList GetUsbDrives();    
+    static QString SelectUsbDrive(const QStringList& usbdrives);
+    static int GetLastRecord(const QString &drive, int*units);
 };
 
 #endif // WORK1_H

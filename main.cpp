@@ -44,11 +44,11 @@ auto main(int argc, char *argv[]) -> int
     com::CoreAppWorker c(Work1::doWork, &a, &parser);
     volatile auto errcode = c.run();
 
-//    switch(errcode)
-//    {
-//    case 1: zInfo("no project name use option -p name"); break;
-//    case 2: zInfo("project not found"); break;
-//    }
+    switch(errcode)
+    {
+        case Work1::OK: zInfo("ok"); break;
+        case Work1::ISEMPTY: zInfo("no block device to read"); break;
+    }
 
     auto e = QCoreApplication::exec();
     return e;

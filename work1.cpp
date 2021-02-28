@@ -18,30 +18,53 @@ Work1::Work1() = default;
 auto Work1::doWork() -> int
 {
     // TODO 1. megtudni a kártyát
-    // lsblk -dro name,path,type,tran,rm,vendor,model,phy-sec
+    // lsblk -dro name,path,type,tran,rm,vendor,model,phy-sec,mountpoint
     // ha több van, lista, választani
     // felírja:
     // sudo fdisk -l /dev/sdh
     // utolsó partíció utolsó szektora +1-ig írunk
     // https://stackoverflow.com/questions/22433257/windows-dd-esque-implementation-in-qt-5
     // mngm ~$ sudo dd if=/dev/sdb of=backup.img bs=512 count=15759360 conv=fsync
-
+    // sudo dd of=/dev/sdm bs=512 if=/media/zoli/mentes/QT_raspi_anti/raspicam3.img status=progress oflag=sync
+    //if(params.ofile.isEmpty()) return NOOUTFILE;
+    //if(!params.ofile.endsWith(".img")) params.ofile+=".img";
     auto usbDrives = GetUsbDrives();
     if(usbDrives.isEmpty()) return ISEMPTY;
     QString usbdrive = (usbDrives.count()>1)?SelectUsbDrive(usbDrives):usbDrives[0];
     //QStringList usbDrives = {"a", "b", "c", "d"};
     //auto usbdrive = SelectUsbDrive(usbDrives);
     int units;
-    auto lastrec = GetLastRecord(usbdrive, &units);
+    auto lastrec = GetLastRecord(usbdrive, &units);    
+    if(lastrec==-1) return NOLASTREC;
 
-    zInfo(usbdrive + ": "+QString::number(lastrec+1))
+    zInfo(usbdrive + ": "+QString::number(lastrec+1));
+    QString msg;
+    bool confirmed = false;
+
+    if(params.ofile.isEmpty()){
+        confirmed = true;
+        params.ofile = GetFileName();
+    }
+    if(params.ofile.isEmpty()) return NOOUTFILE;
+    if(!params.ofile.endsWith(".img")) params.ofile+=".img";
+    if(!confirmed) confirmed = ConfirmYes();
+    if(confirmed) dd(usbdrive, params.ofile, units, lastrec+1, &msg);
 
     return OK;
 }
 
 auto Work1::GetLastRecord(const QString& drive, int* units) -> int
 {
-    auto cmd = QStringLiteral("sudo fdisk -l %1").arg(drive);
+    //sudo partx -r /dev/sdh
+    /*
+     * zoli@ubul:~$ sudo partx -r /dev/sdh
+NR START END SECTORS SIZE NAME UUID
+1 8192 532479 524288 256M  5e3da3da-01
+2 532480 18702335 18169856 8,7G  5e3da3da-02
+
+*/
+    //auto cmd = QStringLiteral("sudo fdisk -l %1").arg(drive);
+    auto cmd = QStringLiteral("sudo partx -r %1").arg(drive);
     int lastrec = -1;
     auto out = com::helper::ProcessHelper::Execute(cmd);
     if(out.exitCode) return -1;
@@ -49,22 +72,31 @@ auto Work1::GetLastRecord(const QString& drive, int* units) -> int
 
     for(auto&i:out.stdOut.split('\n'))
     {
-        if(i.startsWith(QStringLiteral("\\dev")))
-        {
-            auto j = i.split(' ');
-            bool isok;
-            auto k = j[3].toInt(&isok);
-            if(isok && k>lastrec) lastrec = k;
-        }
-        else if(units && i.startsWith(QStringLiteral("Units:")))
-        {
-            auto j = i.split('=');
+        if(i.isEmpty()) continue;
 
-            auto k = j[1].split(' ');
-            bool isok;
-            auto u = k[1].toInt(&isok);
-            if(isok) *units = u;
+        auto j = i.split(' ');
+        bool isok;
+        auto k = j[2].toInt(&isok);
+        if(isok && k>lastrec)
+        {
+             lastrec = k;
+             if(units)
+             {
+                auto sectors = j[3].toInt();
+                auto size = j[4].toUInt();
+                *units = size/sectors;
+             }
         }
+
+//        else if(units && i.startsWith(QStringLiteral("Units:")))
+//        {
+//            auto j = i.split('=');
+
+//            auto k = j[1].split(' ');
+//            bool isok;
+//            auto u = k[1].toInt(&isok);
+//            if(isok) *units = u;
+//        }
     }
 
     return lastrec;
@@ -75,7 +107,7 @@ auto Work1::GetUsbDrives() -> QStringList
 {
     QStringList e;
 
-    auto cmd = QStringLiteral("lsblk -dro name,path,type,tran,rm,vendor,model,phy-sec");
+    auto cmd = QStringLiteral("lsblk -dro name,path,type,tran,rm,vendor,model,phy-sec,mountpoint");
     auto out = com::helper::ProcessHelper::Execute(cmd);
     if(out.exitCode) return e;
     if(out.stdOut.isEmpty()) return e;
@@ -84,7 +116,8 @@ auto Work1::GetUsbDrives() -> QStringList
     {
         if(i.isEmpty()) continue;
         auto j=i.split(' ');
-        if(
+        if(j[8]=='/'||j[8]=="/boot") continue;
+        if(            
             j[2]==QLatin1String("disk")&&
             j[3]==QLatin1String("usb")&&
             j[4]==QLatin1String("1")) e.append(j[1]);
@@ -109,6 +142,33 @@ QString Work1::SelectUsbDrive(const QStringList &usbdrives)
     return usbdrives[ix-1];
 }
 
+bool Work1::ConfirmYes()
+{
+    zInfo("Say 'yes' to continue or any other to quit.")
+    QTextStream in(stdin);
+    auto intxt = in.readLine();
+    return intxt.trimmed().toLower()=="yes";
+}
+
+auto Work1::GetFileName() ->QString
+{
+    zInfo("Add output file name.")
+    QTextStream in(stdin);
+    return in.readLine();
+}
+
+int Work1::dd(const QString& src, const QString& dst, int bs, int count, QString *mnt)
+{
+    QString e;
+    auto cmd = QStringLiteral("sudo dd of=%1 bs=%3 count=%4 if=%2 status=progress oflag=sync").arg(dst).arg(src).arg(bs).arg(count);
+    zInfo(cmd);
+    return 1;
+    auto out = com::helper::ProcessHelper::Execute(cmd);
+    if(out.exitCode) return out.exitCode;
+    if(out.stdOut.isEmpty()) return out.exitCode;
+    if(mnt)*mnt = out.ToString();
+    return 0;
+}
 /*
 NAME PATH TYPE TRAN RM VENDOR MODEL PHY-SEC
 loop0 /dev/loop0 loop  0   512

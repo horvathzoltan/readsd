@@ -17,7 +17,7 @@ class Work1
 {
 public:
     enum Result : int{
-      OK=0,ISEMPTY
+      OK=0,ISEMPTY,NOOUTFILE,NOLASTREC
     };
 public:
     Work1();
@@ -27,6 +27,9 @@ public:
     static QStringList GetUsbDrives();    
     static QString SelectUsbDrive(const QStringList& usbdrives);
     static int GetLastRecord(const QString &drive, int*units);
+    static int dd(const QString &src, const QString &dst, int bs, int count, QString *msg);
+    static bool ConfirmYes();
+    static QString GetFileName();
 };
 
 #endif // WORK1_H

@@ -30,12 +30,15 @@ auto Work1::doWork() -> int
     //if(!params.ofile.endsWith(".img")) params.ofile+=".img";
     auto usbDrives = GetUsbDrives();
     if(usbDrives.isEmpty()) return ISEMPTY;
-    QString usbdrive = (usbDrives.count()>1)?SelectUsbDrive(usbDrives):usbDrives[0];
+    QString usbdrive = (usbDrives.count()>1)?SelectUsbDrive(usbDrives):usbDrives[0];    
     //QStringList usbDrives = {"a", "b", "c", "d"};
     //auto usbdrive = SelectUsbDrive(usbDrives);
     int units;
     auto lastrec = GetLastRecord(usbdrive, &units);    
     if(lastrec==-1) return NOLASTREC;
+
+    QStringList mountedparts = MountedParts(usbdrive);
+    if(!mountedparts.isEmpty() && !UmountParts(mountedparts)) return CANNOTUNMOUNT;
 
     zInfo(usbdrive + ": "+QString::number(lastrec+1));
     QString msg;
@@ -155,6 +158,36 @@ auto Work1::GetFileName() ->QString
     zInfo("Add output file name.")
     QTextStream in(stdin);
     return in.readLine();
+}
+
+QStringList Work1::MountedParts(const QString &src)
+{
+    QStringList e;
+    return e;
+    auto cmd = QStringLiteral("sudo mount -l");
+    auto out = com::helper::ProcessHelper::Execute(cmd);
+    if(out.exitCode) return e;
+    if(out.stdOut.isEmpty()) return e;
+
+    for(auto&i:out.stdOut.split('\n'))
+    {
+        auto k = i.split(' ');
+        if(k[0].startsWith(src)) e.append(k[0]);
+    }
+    return e;
+}
+
+bool Work1::UmountParts(const QStringList &src)
+{
+    bool isok = true;
+    for(auto&i:src)
+    {
+        auto cmd = QStringLiteral("sudo umount %1").arg(i);
+        auto out = com::helper::ProcessHelper::Execute(cmd);
+
+        if(out.exitCode) isok = false;
+    }
+    return isok;
 }
 
 int Work1::dd(const QString& src, const QString& dst, int bs, int count, QString *mnt)

@@ -49,7 +49,8 @@ auto main(int argc, char *argv[]) -> int
         case Work1::OK: zInfo("ok"); break;
         case Work1::ISEMPTY: zInfo("no block device to read"); break;
         case Work1::NOOUTFILE: zInfo("no output file to write"); break;
-        case Work1::NOLASTREC: zInfo("cannot find last record"); break;
+        case Work1::NOLASTREC: zInfo("cannot find last record"); break;        
+        case Work1::CANNOTUNMOUNT: zInfo("cannot unmount device"); break;
     }
 
     auto e = QCoreApplication::exec();

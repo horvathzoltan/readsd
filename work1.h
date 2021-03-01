@@ -17,7 +17,7 @@ class Work1
 {
 public:
     enum Result : int{
-      OK=0,ISEMPTY,NOOUTFILE,NOLASTREC
+      OK=0,ISEMPTY,NOOUTFILE,NOLASTREC,CANNOTUNMOUNT
     };
 public:
     Work1();
@@ -30,6 +30,8 @@ public:
     static int dd(const QString &src, const QString &dst, int bs, int count, QString *msg);
     static bool ConfirmYes();
     static QString GetFileName();
+    static QStringList MountedParts(const QString &src);
+    static bool UmountParts(const QStringList &src);
 };
 
 #endif // WORK1_H

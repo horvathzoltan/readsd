@@ -8,6 +8,8 @@
 #include <QTextStream>
 #include <QVariant>
 #include <iostream>
+#include <QProcess>
+#include <QCoreApplication>
 
 Work1Params Work1::params;
 
@@ -33,9 +35,10 @@ auto Work1::doWork() -> int
     QString usbdrive = (usbDrives.count()>1)?SelectUsbDrive(usbDrives):usbDrives[0];    
     //QStringList usbDrives = {"a", "b", "c", "d"};
     //auto usbdrive = SelectUsbDrive(usbDrives);
-    int units;
-    auto lastrec = GetLastRecord(usbdrive, &units);    
-    if(lastrec==-1) return NOLASTREC;
+    int r=55;
+    auto lastrec = GetLastRecord(usbdrive, &r);
+     if(lastrec==-1) return NOLASTREC;
+    if(r==0) return NOUNITS;
 
     QStringList mountedparts = MountedParts(usbdrive);
     if(!mountedparts.isEmpty() && !UmountParts(mountedparts)) return CANNOTUNMOUNT;
@@ -44,19 +47,20 @@ auto Work1::doWork() -> int
     QString msg;
     bool confirmed = false;
 
-    if(params.ofile.isEmpty()){
+    if(params.ofile.isEmpty())
+    {
         confirmed = true;
         params.ofile = GetFileName();
     }
     if(params.ofile.isEmpty()) return NOOUTFILE;
     if(!params.ofile.endsWith(".img")) params.ofile+=".img";
     if(!confirmed) confirmed = ConfirmYes();
-    if(confirmed) dd(usbdrive, params.ofile, units, lastrec+1, &msg);
+    if(confirmed) dd(usbdrive, params.ofile, r, lastrec+1, &msg);
 
     return OK;
 }
 
-auto Work1::GetLastRecord(const QString& drive, int* units) -> int
+int Work1::GetLastRecord(const QString& drive, int* units)
 {
     //sudo partx -r /dev/sdh
     /*
@@ -67,7 +71,7 @@ NR START END SECTORS SIZE NAME UUID
 
 */
     //auto cmd = QStringLiteral("sudo fdisk -l %1").arg(drive);
-    auto cmd = QStringLiteral("sudo partx -r %1").arg(drive);
+    auto cmd = QStringLiteral("sudo partx -rb %1").arg(drive);
     int lastrec = -1;
     auto out = com::helper::ProcessHelper::Execute(cmd);
     if(out.exitCode) return -1;
@@ -83,15 +87,16 @@ NR START END SECTORS SIZE NAME UUID
         if(isok && k>lastrec)
         {
              lastrec = k;
-             if(units)
+             if(units!=nullptr)
              {
-                auto sectors = j[3].toInt();
-                auto size = j[4].toUInt();
-                *units = size/sectors;
+                auto sectors = j[3].toULong();
+                auto size = j[4].toULong();
+                int r = size/sectors;
+                *units =r;
              }
         }
 
-//        else if(units && i.startsWith(QStringLiteral("Units:")))
+//        if(units!=nullptr && i.startsWith(QStringLiteral("Units:")))
 //        {
 //            auto j = i.split('=');
 
@@ -163,7 +168,6 @@ auto Work1::GetFileName() ->QString
 QStringList Work1::MountedParts(const QString &src)
 {
     QStringList e;
-    return e;
     auto cmd = QStringLiteral("sudo mount -l");
     auto out = com::helper::ProcessHelper::Execute(cmd);
     if(out.exitCode) return e;
@@ -193,15 +197,31 @@ bool Work1::UmountParts(const QStringList &src)
 int Work1::dd(const QString& src, const QString& dst, int bs, int count, QString *mnt)
 {
     QString e;
-    auto cmd = QStringLiteral("sudo dd of=%1 bs=%3 count=%4 if=%2 status=progress oflag=sync").arg(dst).arg(src).arg(bs).arg(count);
-    zInfo(cmd);
-    return 1;
-    auto out = com::helper::ProcessHelper::Execute(cmd);
+    auto cmd = QStringLiteral("sudo dd of=%1 bs=%3 count=%4 if=%2 status=progress oflag=sync status=progress").arg(dst).arg(src).arg(bs).arg(count);
+//    zInfo(cmd);
+//    return 1;
+    auto out = Execute2(cmd);
     if(out.exitCode) return out.exitCode;
     if(out.stdOut.isEmpty()) return out.exitCode;
     if(mnt)*mnt = out.ToString();
     return 0;
 }
+
+com::helper::ProcessHelper::Output Work1::Execute2(const QString& cmd){
+    qint64 pid;
+    QProcess process;
+    process.setProcessChannelMode(QProcess::ForwardedChannels);
+    static QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    env.insert("LD_LIBRARY_PATH", "/usr/lib"); // workaround - https://bugreports.qt.io/browse/QTBUG-2284
+    process.setProcessEnvironment(env);
+    static auto path = QCoreApplication::applicationDirPath();
+    process.setWorkingDirectory(path);
+
+    process.start(cmd);
+    process.waitForFinished(-1); // will wait forever until finished
+    return {process.readAllStandardOutput(), process.readAllStandardError(), process.exitCode()};
+}
+
 /*
 NAME PATH TYPE TRAN RM VENDOR MODEL PHY-SEC
 loop0 /dev/loop0 loop  0   512

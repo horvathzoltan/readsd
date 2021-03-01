@@ -22,8 +22,14 @@ auto Work1::doWork() -> int
     // TODO 1. megtudni a kártyát
     // lsblk -dro name,path,type,tran,rm,vendor,model,phy-sec,mountpoint
     // ha több van, lista, választani
-    // felírja vissza a kártyára:
-
+    // felírja:
+    // sudo fdisk -l /dev/sdh
+    // utolsó partíció utolsó szektora +1-ig írunk
+    // https://stackoverflow.com/questions/22433257/windows-dd-esque-implementation-in-qt-5
+    // mngm ~$ sudo dd if=/dev/sdb of=backup.img bs=512 count=15759360 conv=fsync
+    // sudo dd of=/dev/sdm bs=512 if=/media/zoli/mentes/QT_raspi_anti/raspicam3.img status=progress oflag=sync
+    //if(params.ofile.isEmpty()) return NOOUTFILE;
+    //if(!params.ofile.endsWith(".img")) params.ofile+=".img";
     auto usbDrives = GetUsbDrives();
     if(usbDrives.isEmpty()) return ISEMPTY;
     QString usbdrive = (usbDrives.count()>1)?SelectUsbDrive(usbDrives):usbDrives[0];    

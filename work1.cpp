@@ -37,8 +37,9 @@ auto Work1::doWork() -> int
     //auto usbdrive = SelectUsbDrive(usbDrives);
     int r=55;
     auto lastrec = GetLastRecord(usbdrive, &r);
-     if(lastrec==-1) return NOLASTREC;
+    if(lastrec==-1) return NOLASTREC;
     if(r==0) return NOUNITS;
+    zInfo(QStringLiteral("writing: %1 bytes").arg(r*lastrec))
 
     QStringList mountedparts = MountedParts(usbdrive);
     if(!mountedparts.isEmpty() && !UmountParts(mountedparts)) return CANNOTUNMOUNT;
@@ -197,7 +198,8 @@ bool Work1::UmountParts(const QStringList &src)
 int Work1::dd(const QString& src, const QString& dst, int bs, int count, QString *mnt)
 {
     QString e;
-    auto cmd = QStringLiteral("sudo dd of=%1 bs=%3 count=%4 if=%2 status=progress oflag=sync status=progress").arg(dst).arg(src).arg(bs).arg(count);
+    //oflag sync
+    auto cmd = QStringLiteral("sudo dd of=%1 bs=%3 count=%4 if=%2 status=progress conv=fdatasync status=progress").arg(dst).arg(src).arg(bs).arg(count);
 //    zInfo(cmd);
 //    return 1;
     auto out = Execute2(cmd);

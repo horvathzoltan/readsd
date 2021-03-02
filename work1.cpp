@@ -200,6 +200,7 @@ int Work1::dd(const QString& src, const QString& dst, int bs, int count, QString
     QString e;
     //oflag sync
     auto cmd = QStringLiteral("sudo dd of=%1 bs=%3 count=%4 if=%2 status=progress conv=fdatasync status=progress").arg(dst).arg(src).arg(bs).arg(count);
+    return 1;
 //    zInfo(cmd);
 //    return 1;
     auto out = Execute2(cmd);

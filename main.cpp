@@ -7,6 +7,25 @@
 //#include "environment.h"
 #include "work1.h"
 //#include "buildnumber.h"
+#include "typekey.h"
+
+struct ParserKeyValueDesc{
+    QString key;
+    QString value;
+    QString desc;
+};
+
+void ParserInit(QCommandLineParser *p, QCoreApplication *a, const QString& desc, const QList<ParserKeyValueDesc>& opts)
+{
+    p->setApplicationDescription(desc);
+    p->addHelpOption();
+    p->addVersionOption();
+
+    //const QString OPTION_OUT = QStringLiteral("output");
+    for(auto&i:opts) com::helper::CommandLineParserHelper::addOption(p, i.key, i.desc);
+
+    p->process(*a);
+}
 
 auto main(int argc, char *argv[]) -> int
 {
@@ -21,26 +40,27 @@ auto main(int argc, char *argv[]) -> int
 
     QCommandLineParser parser;
 
-    parser.setApplicationDescription(QStringLiteral("reads a sd card"));
-    parser.addHelpOption();
-    parser.addVersionOption();
+    ParserInit(&parser, &a, QStringLiteral("reads a sd card"),
+               {
+                   {
+                       zkey(Work1Params::ofile),
+                       QStringLiteral("output"),
+                       QStringLiteral("file as output")
+                   }
+               });
 
-//    const QString OPTION_TMP = QStringLiteral("template");
-    const QString OPTION_OUT = QStringLiteral("output");
-//    const QString OPTION_PROJNAME = QStringLiteral("project");
+//    parser.setApplicationDescription(QStringLiteral("reads a sd card"));
+//    parser.addHelpOption();
+//    parser.addVersionOption();
 
-//    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_TMP, QStringLiteral("template file"));
-    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_OUT, QStringLiteral("file as output"));
-//    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_PROJNAME, QStringLiteral("project name"));
+//    const QString OPTION_OUT = QStringLiteral("output");
 
-    parser.process(a);
+    //com::helper::CommandLineParserHelper::addOption(&parser, OPTION_OUT, QStringLiteral("file as output"));
 
-//    //    // statikus, számítunk arra, hogy van
-//    Work1::params.tmpfile = parser.value(OPTION_TMP);
-    Work1::params.ofile = parser.value(OPTION_OUT);
-//    Work1::params.projname = parser.value(OPTION_PROJNAME);
+    //parser.process(a);
 
-    //TODO a parser is nem kell, a paraméterek kellenek
+    //Work1::params.ofile = parser.value(OPTION_OUT);
+
     com::CoreAppWorker c(Work1::doWork, &a, &parser);
     volatile auto errcode = c.run();
 
@@ -58,3 +78,4 @@ auto main(int argc, char *argv[]) -> int
     auto e = QCoreApplication::exec();
     return e;
 }
+

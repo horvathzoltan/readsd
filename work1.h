@@ -1,9 +1,11 @@
 #ifndef WORK1_H
 #define WORK1_H
 #include "common/helper/ProcessHelper/processhelper.h"
-
-
+#include <QCommandLineParser>
+#include <QMap>
 #include <QStringList>
+#include <QObject>
+#include "typekey.h"
 
 struct Work1Params{
 public:
@@ -11,9 +13,14 @@ public:
     QString ofile;
     QString projname;
     QString workingpath;
+
+    auto Parse(QCommandLineParser *p) -> Work1Params
+    {
+        Work1Params a;
+        a.ofile = p->value(zkey(Work1Params::ofile));
+        return a;
+    }
 };
-
-
 
 class Work1
 {

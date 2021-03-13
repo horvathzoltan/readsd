@@ -10,6 +10,7 @@ public:
     QString tmpfile;
     QString ofile;
     QString projname;
+    QString workingpath;
 };
 
 

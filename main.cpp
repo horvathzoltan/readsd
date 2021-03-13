@@ -27,10 +27,12 @@ auto main(int argc, char *argv[]) -> int
 
 //    const QString OPTION_TMP = QStringLiteral("template");
     const QString OPTION_OUT = QStringLiteral("output");
+    const QString OPTION_PATH = QStringLiteral("path");
 //    const QString OPTION_PROJNAME = QStringLiteral("project");
 
 //    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_TMP, QStringLiteral("template file"));
     com::helper::CommandLineParserHelper::addOption(&parser, OPTION_OUT, QStringLiteral("file as output"));
+    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_PATH, QStringLiteral("output folder"));
 //    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_PROJNAME, QStringLiteral("project name"));
 
     parser.process(a);
@@ -38,6 +40,7 @@ auto main(int argc, char *argv[]) -> int
 //    //    // statikus, számítunk arra, hogy van
 //    Work1::params.tmpfile = parser.value(OPTION_TMP);
     Work1::params.ofile = parser.value(OPTION_OUT);
+    Work1::params.workingpath = parser.value(OPTION_PATH);
 //    Work1::params.projname = parser.value(OPTION_PROJNAME);
 
     //TODO a parser is nem kell, a paraméterek kellenek

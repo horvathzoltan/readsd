@@ -42,6 +42,7 @@ public:
     static QStringList MountedParts(const QString &src);
     static bool UmountParts(const QStringList &src);
     static com::helper::ProcessHelper::Output Execute2(const QString& cmd);
+    static QString BytesToString(double b);
 };
 
 #endif // WORK1_H

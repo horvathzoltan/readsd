@@ -43,12 +43,14 @@ auto Work1::doWork() -> int
     auto lastrec = GetLastRecord(usbdrive, &r);
     if(lastrec==-1) return NOLASTREC;
     if(r==0) return NOUNITS;
-    zInfo(QStringLiteral("writing: %1 bytes").arg(r*lastrec))
+    long b = (long)r*(long)lastrec;
+    auto b_txt = BytesToString((double)b);
+    zInfo(QStringLiteral("writing: %1 bytes (%2)").arg(b).arg(b_txt))
 
     QStringList mountedparts = MountedParts(usbdrive);
     if(!mountedparts.isEmpty() && !UmountParts(mountedparts)) return CANNOTUNMOUNT;
 
-    zInfo(usbdrive + ": "+QString::number(lastrec+1));
+    zInfo("Last record on " + usbdrive + ": "+QString::number(lastrec+1));
     QString msg;
     bool confirmed = false;
 
@@ -63,6 +65,21 @@ auto Work1::doWork() -> int
     if(confirmed) dd(usbdrive, QDir(working_path).filePath(params.ofile), r, lastrec+1, &msg);
 
     return OK;
+}
+
+QString Work1::BytesToString(double b)
+{
+    double gb = b;
+
+    if(gb<1024) return QStringLiteral("%1 Bytes").arg(gb, 0, 'f', 1);
+    gb = gb/1024;
+    if(gb<1024) return QStringLiteral("%1 KB").arg(gb, 0, 'f', 1);
+    gb = gb/1024;
+    if(gb<1024) return QStringLiteral("%1 MB").arg(gb, 0, 'f', 1);
+    gb = gb/1024;
+    if(gb<1024) return QStringLiteral("%1 GB").arg(gb, 0, 'f', 1);
+    gb = gb/1024;
+    return QStringLiteral("%1 TB").arg(gb, 0, 'f', 1);
 }
 
 int Work1::GetLastRecord(const QString& drive, int* units)
@@ -207,6 +224,8 @@ int Work1::dd(const QString& src, const QString& dst, int bs, int count, QString
     //zInfo(cmd);
     //return 1;
     auto out = Execute2(cmd);
+    zInfo("copy ready, syncing...");
+    Execute2(QStringLiteral("sync"));
     if(out.exitCode) return out.exitCode;
     if(out.stdOut.isEmpty()) return out.exitCode;
     if(mnt)*mnt = out.ToString();

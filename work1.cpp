@@ -1,6 +1,6 @@
 #include "work1.h"
 #include "common/logger/log.h"
-//#include "common/helper/textfilehelper/textfilehelper.h"
+#include "common/helper/textfilehelper/textfilehelper.h"
 #include "common/helper/ProcessHelper/processhelper.h"
 //#include "sqlhelper.h"
 //#include "settings.h"
@@ -62,10 +62,64 @@ auto Work1::doWork() -> int
     if(params.ofile.isEmpty()) return NOOUTFILE;
     if(!params.ofile.endsWith(".img")) params.ofile+=".img";
     if(!confirmed) confirmed = ConfirmYes();
-    if(confirmed) dd(usbdrive, QDir(working_path).filePath(params.ofile), r, lastrec+1, &msg);
+    if(!confirmed) return NOTCONFIRMED;
+    auto fn =  QDir(working_path).filePath(params.ofile);
+    auto ddr = dd(usbdrive,fn, r, lastrec+1, &msg);
+    if(ddr) return DDERROR;
+    sha256sumFile(fn);
+
+    auto sha_fn1 = QDir(working_path).filePath("lastcopy.sha256");
+    sha256sumDevice(usbdrive, r, lastrec, sha_fn1);
+
+//    QString sha1 = getSha(fn);
+//    if(sha1.isEmpty()) return NOCHECK1;
+//    QString sha0 = getSha(fn+".sha256");
+
+    //sha256sumDevice(usbdrive, r, lastrec_dest, sha_fn1);
+
+    QString sha1 = getSha(sha_fn1);
+    if(sha1.isEmpty()) return NOCHECK1;
+    QString sha0 = getSha(fn+".sha256");
+    if(sha1.isEmpty()) return NOCHECK0;
+    zInfo(QStringLiteral("sha0: ")+sha0)
+    zInfo(QStringLiteral("sha1: ")+sha1)
+    if(sha1!=sha0) return CHECKSUMERROR;
 
     return OK;
 }
+
+QString Work1::getSha(const QString& fn){
+    auto txt = com::helper::TextFileHelper::load(fn);
+    if(txt.isEmpty()) return QString();
+    auto ix0 = txt.indexOf(' ');
+    if(ix0<0) return QString();
+    return txt.left(ix0);
+}
+
+int Work1::sha256sumDevice(const QString& fn, int r, qint64 b, const QString& sha_fn)
+{
+    QString e;
+    zInfo("creating sha256 checksum...");
+    auto cmd = QStringLiteral("/bin/sh -c \"sudo dd bs=%2 count=%3 if=%1 | sha256sum > %4\"").arg(fn).arg(r).arg(b).arg(sha_fn);
+    auto out = Execute2(cmd);
+    if(out.exitCode) return out.exitCode;
+    if(out.stdOut.isEmpty()) return out.exitCode;
+    zInfo("ok");
+    return 0;
+}
+
+int Work1::sha256sumFile(const QString& fn )
+{
+    QString e;
+    zInfo("creating sha256 checksum...");
+    auto cmd = QStringLiteral("sha256sum %1 > %1.sha256").arg(fn);
+    auto out = Execute2(cmd);
+    zInfo("ok");
+    if(out.exitCode) return out.exitCode;
+    if(out.stdOut.isEmpty()) return out.exitCode;
+    return 0;
+}
+
 
 QString Work1::BytesToString(double b)
 {
@@ -226,9 +280,9 @@ int Work1::dd(const QString& src, const QString& dst, int bs, int count, QString
     auto out = Execute2(cmd);
     zInfo("copy ready, syncing...");
     Execute2(QStringLiteral("sync"));
+    if(mnt)*mnt = out.ToString();
     if(out.exitCode) return out.exitCode;
     if(out.stdOut.isEmpty()) return out.exitCode;
-    if(mnt)*mnt = out.ToString();
     return 0;
 }
 

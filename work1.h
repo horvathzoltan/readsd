@@ -26,7 +26,7 @@ class Work1
 {
 public:
     enum Result : int{
-      OK=0,ISEMPTY,NOOUTFILE,NOLASTREC,CANNOTUNMOUNT,NOUNITS
+      OK=0,ISEMPTY,NOOUTFILE,NOLASTREC,CANNOTUNMOUNT,NOUNITS, NOTCONFIRMED, DDERROR,NOCHECK0,NOCHECK1,CHECKSUMERROR
     };
 public:
     Work1();
@@ -43,6 +43,9 @@ public:
     static bool UmountParts(const QStringList &src);
     static com::helper::ProcessHelper::Output Execute2(const QString& cmd);
     static QString BytesToString(double b);
+    static int sha256sumFile(const QString &fn);
+    static QString getSha(const QString &fn);
+    static int sha256sumDevice(const QString &fn, int r, qint64 b, const QString &sha_fn);
 };
 
 #endif // WORK1_H

@@ -69,7 +69,7 @@ auto Work1::doWork() -> int
     sha256sumFile(fn);
 
     auto sha_fn1 = QDir(working_path).filePath("lastcopy.sha256");
-    sha256sumDevice(usbdrive, r, lastrec, sha_fn1);
+    sha256sumDevice(usbdrive, r, lastrec+1, sha_fn1);
 
 //    QString sha1 = getSha(fn);
 //    if(sha1.isEmpty()) return NOCHECK1;
@@ -112,7 +112,7 @@ int Work1::sha256sumFile(const QString& fn )
 {
     QString e;
     zInfo("creating sha256 checksum...");
-    auto cmd = QStringLiteral("sha256sum %1 > %1.sha256").arg(fn);
+    auto cmd = QStringLiteral("/bin/sh -c \"sha256sum %1 > %1.sha256\"").arg(fn);
     auto out = Execute2(cmd);
     zInfo("ok");
     if(out.exitCode) return out.exitCode;

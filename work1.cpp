@@ -43,6 +43,8 @@ auto Work1::doWork() -> int
     auto lastrec = GetLastRecord(usbdrive, &r);
     if(lastrec==-1) return NOLASTREC;
     if(r==0) return NOUNITS;
+
+
     long b = (long)r*(long)lastrec;
     auto b_txt = BytesToString((double)b);
     zInfo(QStringLiteral("writing: %1 bytes (%2)").arg(b).arg(b_txt))
@@ -59,11 +61,19 @@ auto Work1::doWork() -> int
         confirmed = true;
         params.ofile = GetFileName();
     }
-    if(params.ofile.isEmpty()) return NOOUTFILE;
+    if(params.ofile.isEmpty()) return NOOUTFILE;    
     if(!params.ofile.endsWith(".img")) params.ofile+=".img";
     if(!confirmed) confirmed = ConfirmYes();
     if(!confirmed) return NOTCONFIRMED;
+
     auto fn =  QDir(working_path).filePath(params.ofile);
+
+    QString lr = QString::number(lastrec)+','+QString::number(r);
+    QString csvfn = fn;
+    csvfn.replace(".img",".csv");
+    com::helper::TextFileHelper::save(lr, csvfn);
+
+
     auto ddr = dd(usbdrive,fn, r, lastrec+1, &msg);
     if(ddr) return DDERROR;
     sha256sumFile(fn);

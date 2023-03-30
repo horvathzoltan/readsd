@@ -1,6 +1,6 @@
 #ifndef WORK1_H
 #define WORK1_H
-#include "common/helper/ProcessHelper/processhelper.h"
+#include "helpers/processhelper.h"
 #include <QCommandLineParser>
 #include <QMap>
 #include <QStringList>
@@ -13,6 +13,7 @@ public:
     QString ofile;
     QString projname;
     QString workingpath;
+    QString passwd;
 
     auto Parse(QCommandLineParser *p) -> Work1Params
     {
@@ -29,7 +30,6 @@ public:
       OK=0,ISEMPTY,NOOUTFILE,NOLASTREC,CANNOTUNMOUNT,NOUNITS, NOTCONFIRMED, DDERROR,NOCHECK0,NOCHECK1,CHECKSUMERROR
     };
 public:
-    Work1();
     static int doWork();
     static Work1Params params;
 
@@ -41,7 +41,7 @@ public:
     static QString GetFileName();
     static QStringList MountedParts(const QString &src);
     static bool UmountParts(const QStringList &src);
-    static com::helper::ProcessHelper::Output Execute2(const QString& cmd);
+    static ProcessHelper::Output Execute2(const QString& cmd);
     static QString BytesToString(double b);
     static int sha256sumFile(const QString &fn);
     static QString getSha(const QString &fn);

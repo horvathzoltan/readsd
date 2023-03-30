@@ -1,8 +1,9 @@
 #include <QCoreApplication>
-#include "common/logger/log.h"
-#include "common/helper/signalhelper/signalhelper.h"
-#include "common/coreappworker/coreappworker.h"
-#include "common/helper/CommandLineParserHelper/commandlineparserhelper.h"
+#include "helpers/logger.h"
+#include "helpers/signalhelper.h"
+#include "helpers/commandlineparserhelper.h"
+#include "helpers/coreappworker.h"
+
 //#include "settings.h"
 //#include "environment.h"
 #include "work1.h"
@@ -22,18 +23,19 @@ void ParserInit(QCommandLineParser *p, QCoreApplication *a, const QString& desc,
     p->addVersionOption();
 
     //const QString OPTION_OUT = QStringLiteral("output");
-    for(auto&i:opts) com::helper::CommandLineParserHelper::addOption(p, i.key, i.desc);
+    for(auto&i:opts) CommandLineParserHelper::addOption(p, i.key, i.desc);
 
     p->process(*a);
 }
 
 auto main(int argc, char *argv[]) -> int
 {
-    com::helper::SignalHelper::setShutDownSignal(com::helper::SignalHelper::SIGINT_); // shut down on ctrl-c
-    com::helper::SignalHelper::setShutDownSignal(com::helper::SignalHelper::SIGTERM_); // shut down on killall
+    SignalHelper::setShutDownSignal(SignalHelper::SIGINT_); // shut down on ctrl-c
+    SignalHelper::setShutDownSignal(SignalHelper::SIGTERM_); // shut down on killall
+    Logger::Init(Logger::ErrLevel::INFO, Logger::DbgLevel::TRACE, true, true);
 
-    //    zInfo(QStringLiteral("started: %1").arg(Buildnumber::buildnum));
     //zInfo(QStringLiteral("started: %1").arg(BUILDNUMBER));
+    zInfo(QStringLiteral("started: %1").arg("readsd"));
 
     QCoreApplication a(argc, argv);
     QCoreApplication::setApplicationName(QStringLiteral("readsd"));
@@ -54,7 +56,7 @@ auto main(int argc, char *argv[]) -> int
     const QString OPTION_PATH = QStringLiteral("path");
 
 //    const QString OPTION_OUT = QStringLiteral("output");
-    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_PATH, QStringLiteral("output folder"));
+    CommandLineParserHelper::addOption(&parser, OPTION_PATH, QStringLiteral("output folder"));
 
     //com::helper::CommandLineParserHelper::addOption(&parser, OPTION_OUT, QStringLiteral("file as output"));
 
@@ -63,7 +65,7 @@ auto main(int argc, char *argv[]) -> int
     //Work1::params.ofile = parser.value(OPTION_OUT);
     Work1::params.workingpath = parser.value(OPTION_PATH);
 
-    com::CoreAppWorker c(Work1::doWork, &a, &parser);
+    CoreAppWorker c(Work1::doWork, &a, &parser);
     volatile auto errcode = c.run();
 
     switch(errcode)

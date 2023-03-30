@@ -193,3 +193,10 @@ bool TextFileHelper::Save(const QString& txt, const QString& fn, bool isAppend) 
     f.close();
     return true;
 }
+
+QString TextFileHelper::GetFileName(const QString &fn)
+{
+    QFileInfo fi(fn);
+    QString e = fi.fileName();
+    return e;
+}

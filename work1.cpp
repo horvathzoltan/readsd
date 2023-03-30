@@ -103,6 +103,8 @@ auto Work1::doWork() -> int
 }
 
 QString Work1::getSha(const QString& fn){
+    QString fn2 = TextFileHelper::GetFileName(fn);
+    zInfo("sha256sum from: "+fn2);
     QString txt;
     bool ok = TextFileHelper::Load(fn, &txt);
     if(!ok) return QString();
@@ -114,7 +116,8 @@ QString Work1::getSha(const QString& fn){
 
 int Work1::sha256sumDevice(const QString& fn, int r, qint64 b, const QString& sha_fn)
 {
-    zInfo("sha256sum on dev");//:"+fn);
+    auto sha_fn2 = TextFileHelper::GetFileName(sha_fn);
+    zInfo("sha256sum on dev: "+fn+" -> "+sha_fn2);
     auto cmd1 = QStringLiteral("dd bs=%2 count=%3 if=%1 status=progress").arg(fn).arg(r).arg(b);
 
     auto m = ProcessHelper::Model::ParseAsSudo(cmd1, params.passwd);

@@ -27,7 +27,7 @@ class Work1
 {
 public:
     enum Result : int{
-      OK=0,ISEMPTY,NOOUTFILE,NOLASTREC,CANNOTUNMOUNT,NOUNITS, NOTCONFIRMED, DDERROR,NOCHECK0,NOCHECK1,CHECKSUMERROR
+      OK=0,ISEMPTY,NOOUTFILE,NOLASTREC,CANNOTUNMOUNT,NOUNITS, NOTCONFIRMED, DDERROR,NOCHECK0,NOCHECK1,CHECKSUMERROR,NO_PASSWD
     };
 public:
     static int doWork();
@@ -38,7 +38,7 @@ public:
     static int GetLastRecord(const QString &drive, int* units);
     static int dd(const QString &src, const QString &dst, int bs, int count, QString *msg);
     static bool ConfirmYes();
-    static QString GetFileName();
+    static QString GetFileName(const QString &src);
     static QStringList MountedParts(const QString &src);
     static bool UmountParts(const QStringList &src);
     static ProcessHelper::Output Execute2(const QString& cmd);

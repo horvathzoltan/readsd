@@ -77,6 +77,7 @@ auto main(int argc, char *argv[]) -> int
         case Work1::NOUNITS: zInfo("unknown block size"); break;
 
         case Work1::CANNOTUNMOUNT: zInfo("cannot unmount device"); break;
+        case Work1::NO_PASSWD: zInfo("cannot sudo"); break;
     }
 
     auto e = QCoreApplication::exec();

@@ -17,7 +17,11 @@ Work1Params Work1::params;
 
 auto Work1::doWork() -> int
 {
-    params.passwd = "Aladar123";
+    if(params.passwd.isEmpty()){
+        params.passwd = GetFileName("Add sudo password.");
+    }
+
+    if(params.passwd.isEmpty()) return NO_PASSWD;
     // TODO 1. megtudni a kártyát
     // lsblk -dro name,path,type,tran,rm,vendor,model,phy-sec,mountpoint
     // ha több van, lista, választani
@@ -58,7 +62,7 @@ auto Work1::doWork() -> int
     if(params.ofile.isEmpty())
     {
         confirmed = true;
-        params.ofile = GetFileName();
+        params.ofile = GetFileName("Add output file name.");
         //zInfo("beírta a kezével");//reméljük azzal írta be
     }
     if(params.ofile.isEmpty()) return NOOUTFILE;
@@ -260,9 +264,9 @@ bool Work1::ConfirmYes()
     return intxt.trimmed().toLower()=="yes";
 }
 
-auto Work1::GetFileName() ->QString
+auto Work1::GetFileName(const QString& msg) ->QString
 {
-    zInfo("Add output file name.")
+    zInfo(msg)
     QTextStream in(stdin);
     return in.readLine();
 }

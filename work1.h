@@ -23,18 +23,39 @@ public:
     }
 };
 
+struct UsbDriveModel{
+    QString devicePath;
+    QString usbPath;
+    QStringList partLabels;
+
+    QString toString() const;
+    bool isValid();
+};
+
 class Work1
 {
 public:
     enum Result : int{
-      OK=0,ISEMPTY,NOOUTFILE,NOLASTREC,CANNOTUNMOUNT,NOUNITS, NOTCONFIRMED, DDERROR,NOCHECK0,NOCHECK1,CHECKSUMERROR,NO_PASSWD
+        OK=0,
+        ISEMPTY,
+        NO_OUTFILE,
+        NO_LASTREC,
+        CANNOT_UNMOUNT,
+        NO_UNITS,
+        NOT_CONFIRMED,
+        DD_ERROR,
+        NO_CHECK0,
+        NO_CHECK1,
+        CHECKSUM_ERROR,
+        NO_PASSWD,
+        NO_USBDRIVE
     };
 public:
     static int doWork();
     static Work1Params params;
 
-    static QStringList GetUsbDrives();    
-    static QString SelectUsbDrive(const QStringList& usbdrives);
+    static QList<UsbDriveModel> GetUsbDrives();
+    static UsbDriveModel SelectUsbDrive(const QList<UsbDriveModel>& usbdrives);
     static int GetLastRecord(const QString &drive, int* units);
     static int dd(const QString &src, const QString &dst, int bs, int count, QString *msg);
     static bool ConfirmYes();
@@ -46,6 +67,8 @@ public:
     static int sha256sumFile(const QString &fn);
     static QString getSha(const QString &fn);
     static int sha256sumDevice(const QString &fn, int r, qint64 b, const QString &sha_fn);
+    static QString GetUsbPath(const QString& dev);
+    static QStringList GetPartLabels(const QString& dev);
 };
 
 #endif // WORK1_H

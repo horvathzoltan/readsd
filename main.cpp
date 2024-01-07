@@ -77,6 +77,10 @@ auto main(int argc, char *argv[]) -> int
 
         case Work1::CANNOTUNMOUNT: zInfo("cannot unmount device"); break;
         case Work1::NO_PASSWD: zInfo("cannot sudo"); break;
+
+        case Work1::NOCHECK0: zInfo("cannot read drive sha"); break;
+        case Work1::NOCHECK1: zInfo("cannot read image sha"); break;
+        case Work1::CHECKSUMERROR: zInfo("file check failed"); break;
     }
 
     auto e = QCoreApplication::exec();

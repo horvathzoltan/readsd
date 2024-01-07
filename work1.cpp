@@ -7,7 +7,7 @@
 //#include "environment.h"
 #include <QTextStream>
 #include <QVariant>
-#include <iostream>
+//#include <iostream>
 #include <QProcess>
 #include <QCoreApplication>
 #include <QDir>
@@ -70,7 +70,14 @@ auto Work1::doWork() -> int
     if(!confirmed) confirmed = ConfirmYes();
     if(!confirmed) return NOTCONFIRMED;
 
-    auto fn =  QDir(working_path).filePath(params.ofile);
+    auto fn =  QDir(working_path).filePath(params.ofile);    
+    QString shaFn = fn+".sha256";
+    auto sha_tmp_fn = QDir(working_path).filePath("temp.sha256");
+
+    // ha van már ilyen file, temp és sha, töröljük
+    TextFileHelper::Delete(fn);
+    TextFileHelper::Delete(sha_tmp_fn);
+    TextFileHelper::Delete(shaFn);
 
     QString lr = QString::number(lastrec)+','+QString::number(r);
     QString csvfn = fn;
@@ -82,22 +89,21 @@ auto Work1::doWork() -> int
     if(ddr) return DDERROR;
     sha256sumFile(fn);
 
-    auto sha_fn1 = QDir(working_path).filePath("lastcopy.sha256");
-    sha256sumDevice(usbdrive, r, lastrec+1, sha_fn1);
+    // kiszámoljuk a partíció sha-ját a tempbe
 
-//    QString sha1 = getSha(fn);
-//    if(sha1.isEmpty()) return NOCHECK1;
-//    QString sha0 = getSha(fn+".sha256");
+    sha256sumDevice(usbdrive, r, lastrec+1, sha_tmp_fn);
+    QString sha_tmp = getSha(sha_tmp_fn);
 
-    //sha256sumDevice(usbdrive, r, lastrec_dest, sha_fn1);
+    // kiszámoljuk a kiírt img file sha-ját a fn+".sha256"-be
+    if(sha_tmp.isEmpty()) return NOCHECK0;
 
-    QString sha1 = getSha(sha_fn1);
-    if(sha1.isEmpty()) return NOCHECK1;
-    QString sha0 = getSha(fn+".sha256");
-    if(sha1.isEmpty()) return NOCHECK0;
-    zInfo(QStringLiteral("sha0: ")+sha0)
-    zInfo(QStringLiteral("sha1: ")+sha1)
-    if(sha1!=sha0) return CHECKSUMERROR;
+
+    QString sha_img = getSha(shaFn);
+    if(sha_tmp.isEmpty()) return NOCHECK1;
+
+    zInfo(QStringLiteral("sha_tmp: ")+sha_tmp)
+    zInfo(QStringLiteral("sha_img: ")+sha_img)
+    if(sha_tmp!=sha_img) return CHECKSUMERROR;
 
     return OK;
 }
@@ -219,11 +225,12 @@ NR START END SECTORS SIZE NAME UUID
 
 }
 
+//1000000000
 auto Work1::GetUsbDrives() -> QStringList
 {
     QStringList e;
 
-    auto cmd = QStringLiteral("lsblk -dro name,path,type,tran,rm,vendor,model,phy-sec,mountpoint");
+    auto cmd = QStringLiteral("lsblk -dbro name,path,type,tran,rm,vendor,model,phy-sec,size,mountpoint");
     auto m2 = ProcessHelper::Model::Parse(cmd);
     auto out = ProcessHelper::Execute3(m2);
     if(out.exitCode) return e;
@@ -233,12 +240,27 @@ auto Work1::GetUsbDrives() -> QStringList
     {
         if(i.isEmpty()) continue;
         auto j=i.split(' ');
-        if(j[8]=='/'||j[8]=="/boot") continue;
-        if(
-            j[2]==QLatin1String("disk")&&
-            j[3]==QLatin1String("usb")&&
-            j[4]==QLatin1String("1")) e.append(j[1]);
-        else if(j[0].startsWith("mmc")) e.append(j[1]);
+
+        bool isBoot = j[9]=='/'||j[9]=="/boot";
+
+        if(isBoot) continue;
+
+        bool isRemovableDisk = j[2]==QLatin1String("disk")&&
+                     j[4]==QLatin1String("1");
+
+        if(!isRemovableDisk) continue;
+
+        bool isUsb = j[3]==QLatin1String("usb");
+
+        bool isMmc = j[0].startsWith("mmc");
+
+        bool ok;
+        long size = j[8].toLong(&ok);
+        bool hasCard = ok && size>0;
+
+        if(isRemovableDisk && (isUsb || isMmc) && hasCard){
+            e.append(j[1]);
+        }
     }
 
     return e;

@@ -17,7 +17,8 @@ Work1Params Work1::params;
 
 auto Work1::doWork() -> int
 {
-    if(params.passwd.isEmpty()){
+    bool no_password = params.passwd.isEmpty();
+    if(no_password){
         params.passwd = GetFileName("Add sudo password.");
     }
 
@@ -34,7 +35,7 @@ auto Work1::doWork() -> int
     //if(params.ofile.isEmpty()) return NOOUTFILE;
     //if(!params.ofile.endsWith(".img")) params.ofile+=".img";
     QString working_path = params.workingpath;
-    if(working_path.isEmpty()) working_path = qApp->applicationDirPath();
+    if(working_path.isEmpty()) working_path = QDir::currentPath();
 
     auto usbDrives = GetUsbDrives();
 
@@ -355,7 +356,9 @@ auto Work1::GetFileName(const QString& msg) ->QString
 {
     zInfo(msg)
     QTextStream in(stdin);
-    return in.readLine();
+    QString txt = in.readLine();
+    //    QString txt="kacaj";
+    return txt;
 }
 
 QStringList Work1::MountedParts(const QString &src)

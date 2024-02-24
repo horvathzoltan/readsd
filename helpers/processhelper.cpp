@@ -94,19 +94,25 @@ ProcessHelper::Output ProcessHelper::Execute3(const QList<Model>& models){
         {
             p->setReadChannel(QProcess::StandardError);
             while (!p->atEnd()) {
-                QString d = p->readAll();
-                if(m.showStdErr) std::cerr << d.toStdString();
-                o2.append(d.toStdString());
+                QByteArray d = p->readAll();
+                if (m.showStdErr)
+                    std::cerr << d.toStdString();
+                // o2.append(d.toStdString());
+                //QByteArray s = d.toUtf8();
+                o2.append(d);
             }
         };
 
         QObject::connect(p, &QProcess::readyReadStandardError,readyR);
 
 
-        if(m.args.isEmpty())
-            p->start(m.cmd);
-        else
+        if(m.args.isEmpty()){
+            //p->start(m.cmd);
+            QProcess process;
+            process.start(m.cmd, {}, QIODevice::ReadWrite);
+        }else{
             p->start(m.cmd,m.args);
+        }
     }
 
 
@@ -144,7 +150,7 @@ ProcessHelper::Output ProcessHelper::Execute3(const QList<Model>& models){
 //    Output e{process2->readAllStandardOutput(),
 //                process2->readAllStandardError(),
 //                process2->exitCode()};
-    for(auto p:processes){
+    for(auto &p:processes){
         delete p;
     }
 
@@ -165,10 +171,13 @@ ProcessHelper::Output ProcessHelper::Execute3(const Model& m){
     static auto path = QCoreApplication::applicationDirPath();
     process.setWorkingDirectory(path);
 
-    if(m.args.isEmpty())
-        process.start(m.cmd);
-    else
+    if(m.args.isEmpty()){
+        QProcess process;
+        process.start(m.cmd, {}, QIODevice::ReadWrite);
+        //process.start(m.cmd);
+    }else {
         process.start(m.cmd,m.args);
+    }
 
     if (!process.waitForStarted(-1))
     {

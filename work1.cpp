@@ -17,6 +17,11 @@ Work1Params Work1::params;
 
 auto Work1::doWork() -> int
 {
+    //bool ok;
+    //qint64 size = QStringLiteral("15931539456").toLongLong(&ok);
+    //bool hasCard = ok && size>0;
+    // "15931539456"
+    //zInfo("size:"+QString::number(size));
     bool no_password = params.passwd.isEmpty();
     if(no_password){
         params.passwd = GetFileName("Add sudo password.");
@@ -61,7 +66,7 @@ auto Work1::doWork() -> int
     if(r==0) return NO_UNITS;
 
 
-    long b = (long)r*(long)lastrec;
+    qint64 b = (qint64)r*(qint64)lastrec;
     auto b_txt = BytesToString((double)b);
     zInfo(QStringLiteral("reading: %1 bytes (%2)").arg(b).arg(b_txt))
 
@@ -261,10 +266,10 @@ NR START END SECTORS SIZE NAME UUID
              lastrec = k;
              if(units!=nullptr)
              {
-                auto sectors = j[3].toULong();
-                auto size = j[4].toULong();
-                int r = size/sectors;
-                *units =r;
+                 quint64 sectors = j[3].toULongLong();
+                 quint64 size = j[4].toULongLong();
+                 int r = size / sectors;
+                 *units = r;
              }
         }
 
@@ -297,6 +302,7 @@ QList<UsbDriveModel> Work1::GetUsbDrives()
 
     for(auto&i:out.stdOut.split('\n'))
     {
+        zInfo("devices:"+i)
         if(i.isEmpty()) continue;
         auto j=i.split(' ');
 
@@ -314,9 +320,9 @@ QList<UsbDriveModel> Work1::GetUsbDrives()
         bool isMmc = j[0].startsWith("mmc");
 
         bool ok;
-        long size = j[8].toLong(&ok);
+        qint64 size = j[8].toLongLong(&ok);
         bool hasCard = ok && size>0;
-
+// "15931539456"
         if(isRemovableDisk && (isUsb || isMmc) && hasCard){
             UsbDriveModel m;
             m.devicePath = j[1];

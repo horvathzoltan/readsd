@@ -12,6 +12,7 @@ struct ParserKeyValueDesc{
     QString key;
     QString value;
     QString desc;
+    bool isBool = false;
 };
 
 void ParserInit(QCommandLineParser *p, QCoreApplication *a, const QString& desc, const QList<ParserKeyValueDesc>& opts)
@@ -21,7 +22,13 @@ void ParserInit(QCommandLineParser *p, QCoreApplication *a, const QString& desc,
     p->addVersionOption();
 
     //const QString OPTION_OUT = QStringLiteral("output");
-    for(auto&i:opts) CommandLineParserHelper::addOption(p, i.key, i.desc);
+    for(auto&i:opts){
+        if(i.isBool){
+            CommandLineParserHelper::addOptionBool(p, i.key, i.desc);
+        } else{
+            CommandLineParserHelper::addOption(p, i.key, i.desc);
+        }
+    }
 
     p->process(*a);
 }
@@ -51,18 +58,13 @@ auto main(int argc, char *argv[]) -> int
 
     ParserInit(&parser, &a, QStringLiteral("reads a sd card"),
                {
-                   {
-                       zkey(Work1Params::ofile),
-                       QStringLiteral("output"),
-                       QStringLiteral("file as output")
-                   }
-               });
+                {"o",QStringLiteral("output"),QStringLiteral("file as output")},
+                {"p",QStringLiteral("path"),QStringLiteral("working path")},
+                {"s",QStringLiteral("passwd"),QStringLiteral("secret")},
+                {"f",QStringLiteral("force"),QStringLiteral("no ask"), true},
+               });    
 
-    const QString OPTION_PATH = QStringLiteral("path");
-
-    CommandLineParserHelper::addOption(&parser, OPTION_PATH, QStringLiteral("output folder"));
-
-    Work1::params.workingpath = parser.value(OPTION_PATH);
+    Work1::params.Parse(&parser);
 
     CoreAppWorker c(Work1::doWork, &a, &parser);
     volatile auto errcode = c.run();

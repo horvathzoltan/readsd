@@ -9,17 +9,17 @@
 
 struct Work1Params{
 public:
-    QString tmpfile;
     QString ofile;
-    QString projname;
-    QString workingpath;
+    bool force;
+    QString path;
     QString passwd;
 
-    auto Parse(QCommandLineParser *p) -> Work1Params
+    void Parse(QCommandLineParser *p)
     {
-        Work1Params a;
-        a.ofile = p->value(zkey(Work1Params::ofile));
-        return a;
+        ofile = p->value("o");
+        path = p->value("p");
+        passwd = p->value("s");
+        force = p->isSet("f");
     }
 };
 

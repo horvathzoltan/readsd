@@ -28,6 +28,8 @@ auto Work1::doWork() -> int
     }
 
     if(params.passwd.isEmpty()) return NO_PASSWD;
+
+    ProcessHelper::SetPassword(params.passwd);
     // TODO 1. megtudni a kártyát
     // lsblk -dro name,path,type,tran,rm,vendor,model,phy-sec,mountpoint
     // ha több van, lista, választani
@@ -39,9 +41,10 @@ auto Work1::doWork() -> int
     // sudo dd of=/dev/sdm bs=512 if=/media/zoli/mentes/QT_raspi_anti/raspicam3.img status=progress oflag=sync
     //if(params.ofile.isEmpty()) return NOOUTFILE;
     //if(!params.ofile.endsWith(".img")) params.ofile+=".img";
-    QString working_path = params.workingpath;
+    QString working_path = params.path;
     if(working_path.isEmpty()) working_path = QDir::currentPath();
 
+    // megszerzi a block deviceokat
     auto usbDrives = GetUsbDrives();
 
     if(usbDrives.isEmpty()) return ISEMPTY;
@@ -83,19 +86,25 @@ auto Work1::doWork() -> int
         params.ofile = GetFileName("Add output file name.");
         //zInfo("beírta a kezével");//reméljük azzal írta be
     }
+
     if(params.ofile.isEmpty()) return NO_OUTFILE;
     if(!params.ofile.endsWith(".img")) params.ofile+=".img";
+    if(params.force){
+        confirmed = true;
+    }
     if(!confirmed) confirmed = ConfirmYes();
     if(!confirmed) return NOT_CONFIRMED;
 
     auto fn =  QDir(working_path).filePath(params.ofile);    
     QString shaFn = fn+".sha256";
     auto sha_tmp_fn = QDir(working_path).filePath("temp.sha256");
+    QString csvFn = fn+".csv";
 
     // ha van már ilyen file, temp és sha, töröljük
     TextFileHelper::Delete(fn);
     TextFileHelper::Delete(sha_tmp_fn);
     TextFileHelper::Delete(shaFn);
+    TextFileHelper::Delete(csvFn);
 
     QString lr = QString::number(lastrec)+','+QString::number(r);
     QString csvfn = fn;
@@ -128,7 +137,7 @@ auto Work1::doWork() -> int
 
 QString Work1::getSha(const QString& fn){
     QString fn2 = TextFileHelper::GetFileName(fn);
-    zInfo("sha256sum from: "+fn2);
+    zInfo("sha256sum from: "+fn);
     QString txt;
     bool ok = TextFileHelper::Load(fn, &txt);
     if(!ok) return QString();
@@ -142,13 +151,14 @@ int Work1::sha256sumDevice(const QString& fn, int r, qint64 b, const QString& sh
 {
     auto sha_fn2 = TextFileHelper::GetFileName(sha_fn);
     zInfo("sha256sum on dev: "+fn+" -> "+sha_fn2);
-    auto cmd1 = QStringLiteral("dd bs=%2 count=%3 if=%1 status=progress").arg(fn).arg(r).arg(b);
+    auto cmd_dd = QStringLiteral("dd bs=%2 count=%3 if=%1 status=progress | sha256sum").arg(fn).arg(r).arg(b);
 
-    auto m = ProcessHelper::Model::ParseAsSudo(cmd1, params.passwd);
-    m[1].showStdErr=false;
-    m.append({.cmd="sha256sum", .args = {}, .timeout=-1, .showStdErr = false });
+    //zInfo("cmd_dd:"+cmd_dd);
+    //auto m = ProcessHelper::Model::ParseAsSudo(cmd1, params.passwd);
+    //m[1].showStdErr=false;
+    //m.append({.cmd="sha256sum", .args = {}, .timeout=-1, .showStdErr = false });
 
-    auto out = ProcessHelper::Execute3(m);
+    auto out = ProcessHelper::ShellExecuteSudo(cmd_dd);
 
     if(out.exitCode) return out.exitCode;
     if(out.stdOut.isEmpty()) return out.exitCode;
@@ -162,8 +172,8 @@ QString Work1::GetUsbPath(const QString &dev)
 {
     auto cmd = QStringLiteral("udevadm info -q path");
     cmd+=" "+dev;
-    auto m2 = ProcessHelper::Model::Parse(cmd);
-    auto out = ProcessHelper::Execute3(m2);
+    //auto m2 = ProcessHelper::Model::Parse(cmd);
+    auto out = ProcessHelper::ShellExecute(cmd);
     if(out.exitCode) return "";
     if(out.stdOut.isEmpty()) return "";
 
@@ -182,8 +192,8 @@ QString Work1::GetUsbPath(const QString &dev)
 QStringList Work1::GetPartLabels(const QString &dev)
 {
     auto cmd = QStringLiteral("lsblk -r %1 -o NAME,path,LABEL,Type").arg(dev);
-    auto m2 = ProcessHelper::Model::Parse(cmd);
-    auto out = ProcessHelper::Execute3(m2);
+    //auto m2 = ProcessHelper::Model::Parse(cmd);
+    auto out = ProcessHelper::ShellExecute(cmd);
     if(out.exitCode) return QStringList();
     if(out.stdOut.isEmpty()) return QStringList();
 
@@ -206,7 +216,8 @@ QStringList Work1::GetPartLabels(const QString &dev)
 int Work1::sha256sumFile(const QString& fn)
 {
     zInfo("sha256sum on file");//:"+fn);
-    auto out = ProcessHelper::Execute3({.cmd="sha256sum", .args = {fn}, .timeout=-1, .showStdErr = false });
+    QString cmd = QStringLiteral("sha256sum %1").arg(fn);
+    auto out = ProcessHelper::ShellExecute(cmd);
 
     if(out.exitCode) return out.exitCode;
     if(out.stdOut.isEmpty()) return out.exitCode;
@@ -245,10 +256,10 @@ NR START END SECTORS SIZE NAME UUID
 */
     //auto cmd = QStringLiteral("sudo fdisk -l %1").arg(drive);
     auto cmd = QStringLiteral("partx -rb %1").arg(drive);
-    auto m2 = ProcessHelper::Model::ParseAsSudo(cmd, params.passwd);
+    //auto m2 = ProcessHelper::Model::ParseAsSudo(cmd, params.passwd);
     //m2[0].showStdErr= false;
-    m2[1].showStdErr= false;
-    auto out = ProcessHelper::Execute3(m2);
+    //m2[1].showStdErr= false;
+    auto out = ProcessHelper::ShellExecuteSudo(cmd);
 
     int lastrec = -1;
     if(out.exitCode) return -1;
@@ -295,8 +306,8 @@ QList<UsbDriveModel> Work1::GetUsbDrives()
     QList<UsbDriveModel> e;
 
     auto cmd = QStringLiteral("lsblk -dbro name,path,type,tran,rm,vendor,model,phy-sec,size,mountpoint");
-    auto m2 = ProcessHelper::Model::Parse(cmd);
-    auto out = ProcessHelper::Execute3(m2);
+    //auto m2 = ProcessHelper::Model::Parse(cmd);
+    auto out = ProcessHelper::ShellExecuteSudo(cmd);
     if(out.exitCode) return e;
     if(out.stdOut.isEmpty()) return e;
 
@@ -371,8 +382,8 @@ QStringList Work1::MountedParts(const QString &src)
 {
     QStringList e;
     auto cmd = QStringLiteral("mount -l");
-    auto m2 = ProcessHelper::Model::ParseAsSudo(cmd, params.passwd);
-    auto out = ProcessHelper::Execute3(m2);
+    //auto m2 = ProcessHelper::Model::ParseAsSudo(cmd, params.passwd);
+    auto out = ProcessHelper::ShellExecuteSudo(cmd);
     if(out.exitCode) return e;
     if(out.stdOut.isEmpty()) return e;
 
@@ -390,8 +401,8 @@ bool Work1::UmountParts(const QStringList &src)
     for(auto&i:src)
     {
         auto cmd = QStringLiteral("umount %1").arg(i);
-        auto m2 = ProcessHelper::Model::ParseAsSudo(cmd, params.passwd);
-        auto out = ProcessHelper::Execute3(m2);
+        //auto m2 = ProcessHelper::Model::ParseAsSudo(cmd, params.passwd);
+        auto out = ProcessHelper::ShellExecuteSudo(cmd);
 
         if(out.exitCode) isok = false;
     }
@@ -403,15 +414,15 @@ int Work1::dd(const QString& src, const QString& dst, int bs, int count, QString
     zInfo("copying...");//:"+src+"->"+dst );
 //    QString e;
     //oflag sync
-    auto cmd = QStringLiteral("dd of=%1 bs=%3 count=%4 if=%2 status=progress conv=fdatasync").arg(dst,src).arg(bs).arg(count);
+    auto cmd_dd = QStringLiteral("dd of=%1 bs=%3 count=%4 if=%2 status=progress conv=fdatasync").arg(dst,src).arg(bs).arg(count);
     //zInfo(cmd);
     //return 1;
-    auto m2 = ProcessHelper::Model::ParseAsSudo(cmd, params.passwd);
-    auto out = ProcessHelper::Execute3(m2);//2
+    //auto m2 = ProcessHelper::Model::ParseAsSudo(cmd, params.passwd);
+    auto out = ProcessHelper::ShellExecuteSudo(cmd_dd);//2
     if(out.exitCode) return 1;
     zInfo("copy ok. syncing...");
-    auto m3 = ProcessHelper::Model::Parse(QStringLiteral("sync"));
-    ProcessHelper::Execute3(m3);//2
+    auto cmd_sync = QStringLiteral("sync");//ProcessHelper::Model::Parse(QStringLiteral("sync"));
+    ProcessHelper::ShellExecute(cmd_sync);//2
     if(mnt)*mnt = out.ToString();
     if(out.exitCode) return out.exitCode;
     if(out.stdOut.isEmpty()) return out.exitCode;

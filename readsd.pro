@@ -14,7 +14,6 @@ SOURCES += \
         helpers/commandlineparserhelper.cpp \
         helpers/coreappworker.cpp \
         helpers/logger.cpp \
-        helpers/networkhelper.cpp \
         helpers/processhelper.cpp \
         helpers/signalhelper.cpp \
         helpers/textfilehelper.cpp \
@@ -25,7 +24,6 @@ HEADERS += \
     helpers/commandlineparserhelper.h \
     helpers/coreappworker.h \
     helpers/logger.h \
-    helpers/networkhelper.h \
     helpers/processhelper.h \
     helpers/signalhelper.h \
     helpers/stringify.h \

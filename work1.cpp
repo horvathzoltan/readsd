@@ -12,24 +12,26 @@
 #include <QCoreApplication>
 #include <QDir>
 
-Work1Params Work1::params;
+Work1::Params Work1::_params;
 
+// ./readsd -p /media/pi/butyok2/clone/ -o img56 -s Aladar123 -f
+// ./readsd -p /home/zoli/aaa/ -o img56 -s Aladar123 -f
 
-auto Work1::doWork() -> int
+int Work1::doWork()
 {
     //bool ok;
     //qint64 size = QStringLiteral("15931539456").toLongLong(&ok);
     //bool hasCard = ok && size>0;
     // "15931539456"
     //zInfo("size:"+QString::number(size));
-    bool no_password = params.passwd.isEmpty();
+    bool no_password = _params.passwd.isEmpty();
     if(no_password){
-        params.passwd = GetFileName("Add sudo password.");
+        _params.passwd = GetFileName("Add sudo password.");
     }
 
-    if(params.passwd.isEmpty()) return NO_PASSWD;
+    if(_params.passwd.isEmpty()) return NO_PASSWD;
 
-    ProcessHelper::SetPassword(params.passwd);
+    ProcessHelper::SetPassword(_params.passwd);
     // TODO 1. megtudni a kártyát
     // lsblk -dro name,path,type,tran,rm,vendor,model,phy-sec,mountpoint
     // ha több van, lista, választani
@@ -41,7 +43,7 @@ auto Work1::doWork() -> int
     // sudo dd of=/dev/sdm bs=512 if=/media/zoli/mentes/QT_raspi_anti/raspicam3.img status=progress oflag=sync
     //if(params.ofile.isEmpty()) return NOOUTFILE;
     //if(!params.ofile.endsWith(".img")) params.ofile+=".img";
-    QString working_path = params.path;
+    QString working_path = _params.path;
     if(working_path.isEmpty()) working_path = QDir::currentPath();
 
     // megszerzi a block deviceokat
@@ -80,22 +82,22 @@ auto Work1::doWork() -> int
     QString msg;
     bool confirmed = false;
 
-    if(params.ofile.isEmpty())
+    if(_params.ofile.isEmpty())
     {
         confirmed = true;
-        params.ofile = GetFileName("Add output file name.");
+        _params.ofile = GetFileName("Add output file name.");
         //zInfo("beírta a kezével");//reméljük azzal írta be
     }
 
-    if(params.ofile.isEmpty()) return NO_OUTFILE;
-    if(!params.ofile.endsWith(".img")) params.ofile+=".img";
-    if(params.force){
+    if(_params.ofile.isEmpty()) return NO_OUTFILE;
+    if(!_params.ofile.endsWith(".img")) _params.ofile+=".img";
+    if(_params.force){
         confirmed = true;
     }
     if(!confirmed) confirmed = ConfirmYes();
     if(!confirmed) return NOT_CONFIRMED;
 
-    auto fn =  QDir(working_path).filePath(params.ofile);    
+    auto fn =  QDir(working_path).filePath(_params.ofile);
     QString shaFn = fn+".sha256";
     auto sha_tmp_fn = QDir(working_path).filePath("temp.sha256");
     QString csvFn = fn+".csv";

@@ -7,22 +7,6 @@
 #include <QObject>
 #include "typekey.h"
 
-struct Work1Params{
-public:
-    QString ofile;
-    bool force;
-    QString path;
-    QString passwd;
-
-    void Parse(QCommandLineParser *p)
-    {
-        ofile = p->value("o");
-        path = p->value("p");
-        passwd = p->value("s");
-        force = p->isSet("f");
-    }
-};
-
 struct UsbDriveModel{
     QString devicePath;
     QString usbPath;
@@ -34,6 +18,24 @@ struct UsbDriveModel{
 
 class Work1
 {
+public:
+    struct Params{
+    public:
+        QString ofile;
+        bool force;
+        QString path;
+        QString passwd;
+
+        void Parse(QCommandLineParser *p)
+        {
+            ofile = p->value("o");
+            path = p->value("p");
+            passwd = p->value("s");
+            force = p->isSet("f");
+        }
+    };
+
+
 public:
     enum Result : int{
         OK=0,
@@ -52,7 +54,7 @@ public:
     };
 public:
     static int doWork();
-    static Work1Params params;
+    static Params _params;
 
     static QList<UsbDriveModel> GetUsbDrives();
     static UsbDriveModel SelectUsbDrive(const QList<UsbDriveModel>& usbdrives);

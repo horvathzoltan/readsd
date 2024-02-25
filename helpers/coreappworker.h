@@ -10,7 +10,7 @@ class CoreAppWorker : public QObject
     Q_OBJECT
 public:
     CoreAppWorker();
-    CoreAppWorker(int (*fn)(), QCoreApplication *app, QCommandLineParser *parser);
+    CoreAppWorker(int (*fn)(), QCoreApplication *app);//, QCommandLineParser *parser);
     int doWork();
 public slots:
     int run();

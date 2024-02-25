@@ -1,37 +1,14 @@
 #include <QCoreApplication>
 #include "helpers/logger.h"
 #include "helpers/signalhelper.h"
-#include "helpers/commandlineparserhelper.h"
+//#include "helpers/commandlineparserhelper.h"
 #include "helpers/coreappworker.h"
 
 #include "work1.h"
 #include "typekey.h"
 #include "helpers/stringify.h"
 
-struct ParserKeyValueDesc{
-    QString key;
-    QString value;
-    QString desc;
-    bool isBool = false;
-};
 
-void ParserInit(QCommandLineParser *p, QCoreApplication *a, const QString& desc, const QList<ParserKeyValueDesc>& opts)
-{
-    p->setApplicationDescription(desc);
-    p->addHelpOption();
-    p->addVersionOption();
-
-    //const QString OPTION_OUT = QStringLiteral("output");
-    for(auto&i:opts){
-        if(i.isBool){
-            CommandLineParserHelper::addOptionBool(p, i.key, i.desc);
-        } else{
-            CommandLineParserHelper::addOption(p, i.key, i.desc);
-        }
-    }
-
-    p->process(*a);
-}
 
 auto main(int argc, char *argv[]) -> int
 {
@@ -41,7 +18,7 @@ auto main(int argc, char *argv[]) -> int
     auto target=QStringLiteral("ApplicationNameString");
 #endif
 
-    QCoreApplication a(argc, argv);
+    QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName(target);
     QCoreApplication::setApplicationVersion("1");
     QCoreApplication::setOrganizationName("LogControl Kft.");
@@ -55,18 +32,20 @@ auto main(int argc, char *argv[]) -> int
     zInfo(QStringLiteral("started ")+target+" as "+user);
 
     QCommandLineParser parser;
+    QList<QCommandLineOption> options{
+        {{"o",QStringLiteral("output")},QStringLiteral("image file name"),"output"},
+        {{"p",QStringLiteral("path")},QStringLiteral("working path"),"path"},
+        {{"s",QStringLiteral("passwd")},QStringLiteral("secret"),"passwd"},
+        {{"f",QStringLiteral("force")},QStringLiteral("no ask")},
+        };
+    parser.addHelpOption();
+    parser.addVersionOption();
+    parser.addOptions(options);
+    parser.process(app);
 
-    ParserInit(&parser, &a, QStringLiteral("reads a sd card"),
-               {
-                {"o",QStringLiteral("output"),QStringLiteral("file as output")},
-                {"p",QStringLiteral("path"),QStringLiteral("working path")},
-                {"s",QStringLiteral("passwd"),QStringLiteral("secret")},
-                {"f",QStringLiteral("force"),QStringLiteral("no ask"), true},
-               });    
+    Work1::_params.Parse(&parser);
 
-    Work1::params.Parse(&parser);
-
-    CoreAppWorker c(Work1::doWork, &a, &parser);
+    CoreAppWorker c(Work1::doWork, &app);
     volatile auto errcode = c.run();
 
     switch(errcode)

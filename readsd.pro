@@ -11,7 +11,6 @@ DEFINES += TARGI=$$TARGET
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-        helpers/commandlineparserhelper.cpp \
         helpers/coreappworker.cpp \
         helpers/logger.cpp \
         helpers/processhelper.cpp \
@@ -21,7 +20,6 @@ SOURCES += \
         work1.cpp
 
 HEADERS += \
-    helpers/commandlineparserhelper.h \
     helpers/coreappworker.h \
     helpers/logger.h \
     helpers/processhelper.h \
@@ -31,7 +29,7 @@ HEADERS += \
     typekey.h \
     work1.h
 
-LIBS += -L/home/zoli/pi4_bullseye/sysroot/usr/lib/arm-linux-gnueabihf
+
 
 contains(QMAKESPEC,.*linux-rasp-pi\d*-.*){
     message(rpi detected)
@@ -39,6 +37,10 @@ contains(QMAKESPEC,.*linux-rasp-pi\d*-.*){
     DEFINES += RPI
 }
 
+unix:rpi:
+{
+    LIBS += -L/home/zoli/pi4_bullseye/sysroot/usr/lib/arm-linux-gnueabihf
+}
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

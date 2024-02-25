@@ -100,18 +100,18 @@ int Work1::doWork()
     auto fn =  QDir(working_path).filePath(_params.ofile);
     QString shaFn = fn+".sha256";
     auto sha_tmp_fn = QDir(working_path).filePath("temp.sha256");
-    QString csvFn = fn+".csv";
+    //QString csvFn = fn+".csv";
 
     // ha van már ilyen file, temp és sha, töröljük
     TextFileHelper::Delete(fn);
     TextFileHelper::Delete(sha_tmp_fn);
     TextFileHelper::Delete(shaFn);
-    TextFileHelper::Delete(csvFn);
+    //TextFileHelper::Delete(csvFn);
 
-    QString lr = QString::number(lastrec)+','+QString::number(r);
+    /*QString lr = QString::number(lastrec)+','+QString::number(r);
     QString csvfn = fn;
     csvfn.replace(".img",".csv");
-    TextFileHelper::Save(lr, csvfn);
+    TextFileHelper::Save(lr, csvfn);*/
 
 
     auto ddr = dd(usbdrive.devicePath, fn, r, lastrec+1, &msg);
@@ -122,6 +122,9 @@ int Work1::doWork()
 
     sha256sumDevice(usbdrive.devicePath, r, lastrec+1, sha_tmp_fn);
     QString sha_tmp = getSha(sha_tmp_fn);
+
+    TextFileHelper::Delete(sha_tmp_fn);
+    //TextFileHelper::Delete(csvfn);
 
     // kiszámoljuk a kiírt img file sha-ját a fn+".sha256"-be
     if(sha_tmp.isEmpty()) return NO_CHECK0;

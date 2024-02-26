@@ -13,6 +13,7 @@ DEFINES += TARGI=$$TARGET
 SOURCES += \
         helpers/coreappworker.cpp \
         helpers/logger.cpp \
+        helpers/mounthelper.cpp \
         helpers/processhelper.cpp \
         helpers/signalhelper.cpp \
         helpers/textfilehelper.cpp \
@@ -22,6 +23,7 @@ SOURCES += \
 HEADERS += \
     helpers/coreappworker.h \
     helpers/logger.h \
+    helpers/mounthelper.h \
     helpers/processhelper.h \
     helpers/signalhelper.h \
     helpers/stringify.h \

@@ -55,7 +55,11 @@ int Work1::doWork()
     UsbDriveModel usbdrive;
 
     if(usbDrives.count()>1){
-        usbdrive = SelectUsbDrive(usbDrives);
+        if(_params.usbSelect){
+            usbdrive = SelectUsbDrive(usbDrives);
+        } else{
+            return TOOMUCH_USBDRIVE;
+        }
     } else if(usbDrives.count()==1){
         usbdrive = usbDrives[0];
         zInfo("usbdrive: "+usbdrive.toString());
@@ -194,29 +198,56 @@ QString Work1::GetUsbPath(const QString &dev)
     return e;
 }
 
-QStringList Work1::GetPartLabels(const QString &dev)
+QList<PartitionModel> Work1::GetPartitions(const QString &dev)
 {
-    auto cmd = QStringLiteral("lsblk -r %1 -o NAME,path,LABEL,Type").arg(dev);
-    //auto m2 = ProcessHelper::Model::Parse(cmd);
+    auto cmd = QStringLiteral("lsblk -r %1 -o name,path,label,type").arg(dev);
     auto out = ProcessHelper::ShellExecute(cmd);
-    if(out.exitCode) return QStringList();
-    if(out.stdOut.isEmpty()) return QStringList();
+    if(out.exitCode) return {};
+    if(out.stdOut.isEmpty()) return {};
 
-    QStringList e;
-    for(auto&i:out.stdOut.split('\n'))
+    QList<PartitionModel> e;
+    QStringList lines = out.stdOut.split('\n');
+    for(auto&l:lines)
     {
-        if(i.isEmpty()) continue;
+        if(l.isEmpty()) continue;
 
-        auto j=i.split(' ');
+        auto words=l.split(' ');
 
-        bool isPart = j[3]=="part";
+        bool isPart = words[3]=="part";
 
         if(isPart){
-            e.append(j[2]);
+            PartitionModel m;
+            m.partPath = words[1];
+            m.label = words[2];
+            e.append(m);
         }
     }
     return e;
 }
+
+//lsblk -r /dev/sdd -o name,path,label,type,mountpoint
+QString Work1::GetMountPoint(const QString& partPath, const QString& partLabel){
+    auto cmd = QStringLiteral("lsblk -r %1 -o name,path,label,type,mountpoint").arg(partPath);
+    auto out = ProcessHelper::ShellExecute(cmd);
+    if(out.exitCode) return {};
+    if(out.stdOut.isEmpty()) {};
+
+    QStringList lines = out.stdOut.split('\n');
+    for(auto&l:lines){
+        if(l.isEmpty()) continue;
+        QStringList words = l.split(' ');
+        int wordsL = words.count();
+        if(wordsL<5) continue;
+
+        bool equals = words[1]==partPath && words[2]==partLabel && words[3]=="part";
+        if(equals){
+            return words[4];
+        }
+
+    }
+    return {};
+}
+
 
 int Work1::sha256sumFile(const QString& fn)
 {
@@ -313,12 +344,13 @@ QList<UsbDriveModel> Work1::GetUsbDrives()
     auto cmd = QStringLiteral("lsblk -dbro name,path,type,tran,rm,vendor,model,phy-sec,size,mountpoint");
     //auto m2 = ProcessHelper::Model::Parse(cmd);
     auto out = ProcessHelper::ShellExecuteSudo(cmd);
+
     if(out.exitCode) return e;
     if(out.stdOut.isEmpty()) return e;
+    zInfo("devices:\n");
 
     for(auto&i:out.stdOut.split('\n'))
-    {
-        zInfo("devices:"+i)
+    {        
         if(i.isEmpty()) continue;
         auto j=i.split(' ');
 
@@ -338,18 +370,53 @@ QList<UsbDriveModel> Work1::GetUsbDrives()
         bool ok;
         qint64 size = j[8].toLongLong(&ok);
         bool hasCard = ok && size>0;
-// "15931539456"
+
         if(isRemovableDisk && (isUsb || isMmc) && hasCard){
             UsbDriveModel m;
             m.devicePath = j[1];
             m.usbPath = GetUsbPath(j[1]);
-            m.partLabels = GetPartLabels(j[1]);
+
+            m.partitions = GetPartitions(j[1]);
+
+            zInfo("device:"+m.toString());
             e.append(m);
+        }
+
+        for(auto&m:e){
+            for(auto&partition:m.partitions){
+                auto mountPoint = GetMountPoint(partition.partPath, partition.label);
+
+                if(!mountPoint.isEmpty()){
+                    //trymount
+
+                    mountPoint = Mount(partition.partPath);
+                }
+
+                if(mountPoint.isEmpty())
+                {
+                    zInfo("cannot mount partition:"+partition.toString());
+                    continue;
+                }
+
+                //partition.project = GetProject(mountPoint);
+            }
         }
     }
 
     return e;
 }
+
+ QString Work1::Mount(const QString& partPath){
+
+     static int counter;
+
+     QString mountPoint = QStringLiteral("/mnt/mountpoint_%1").arg(counter++);
+
+     QString cmd = QStringLiteral("mkdir %1").arg(mountPoint);
+
+
+     return mountPoint;
+ }
 
 UsbDriveModel Work1::SelectUsbDrive(const QList<UsbDriveModel> &usbdrives)
 {
@@ -452,12 +519,14 @@ QString UsbDriveModel::toString() const
         usbn =  usbPath;
     }
 
-    QString labels="";
-    bool hasParts = !partLabels.isEmpty();
-    if(hasParts){
-        labels = partLabels.join(',');
+    QString labels="";    
+    for(auto&p:partitions){
+        if(!labels.isEmpty()) labels+=":";
+        labels += p.toString();
     }
-    return n+": "+usbn+": "+labels;
+    QString msg =  n+": "+usbn;
+    if(!labels.isEmpty())+": "+labels;
+    return msg;
 }
 
 bool UsbDriveModel::isValid()
@@ -465,4 +534,12 @@ bool UsbDriveModel::isValid()
     if(devicePath.isEmpty()) return false;
     if(usbPath.isEmpty()) return false;
     return true;
+}
+
+QString PartitionModel::toString() const
+{
+    QString msg = partPath;
+    if(!label.isEmpty()) msg+=":"+label;
+    if(!project.isEmpty()) msg+=":"+project;
+    return msg;
 }

@@ -7,10 +7,19 @@
 #include <QObject>
 #include "typekey.h"
 
+struct PartitionModel{
+    QString partPath;
+    QString label;
+    QString project;
+
+    QString toString() const;
+};
+
 struct UsbDriveModel{
     QString devicePath;
     QString usbPath;
-    QStringList partLabels;
+
+    QList<PartitionModel> partitions;
 
     QString toString() const;
     bool isValid();
@@ -22,9 +31,10 @@ public:
     struct Params{
     public:
         QString ofile;
-        bool force;
         QString path;
         QString passwd;
+        bool force;
+        bool usbSelect;
 
         void Parse(QCommandLineParser *p)
         {
@@ -32,6 +42,7 @@ public:
             path = p->value("p");
             passwd = p->value("s");
             force = p->isSet("f");
+            usbSelect = p->isSet("b");
         }
     };
 
@@ -50,7 +61,8 @@ public:
         NO_CHECK1,
         CHECKSUM_ERROR,
         NO_PASSWD,
-        NO_USBDRIVE
+        NO_USBDRIVE,
+        TOOMUCH_USBDRIVE
     };
 public:
     static int doWork();
@@ -70,7 +82,11 @@ public:
     static QString getSha(const QString &fn);
     static int sha256sumDevice(const QString &fn, int r, qint64 b, const QString &sha_fn);
     static QString GetUsbPath(const QString& dev);
-    static QStringList GetPartLabels(const QString& dev);
+
+    static QList<PartitionModel> GetPartitions(const QString& dev);
+    static QString GetMountPoint(const QString& dev, const QString& label);
+
+    static QString Mount(const QString& partPath);
 };
 
 #endif // WORK1_H

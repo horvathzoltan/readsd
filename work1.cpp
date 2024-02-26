@@ -12,6 +12,9 @@
 #include <QCoreApplication>
 #include <QDir>
 
+#include <helpers/mounthelper.h>
+#include <helpers/processhelper.h>
+
 Work1::Params Work1::_params;
 
 // ./readsd -p /media/pi/butyok2/clone/ -o img56 -s Aladar123 -f
@@ -51,6 +54,10 @@ int Work1::doWork()
 
     if(usbDrives.isEmpty()) return ISEMPTY;
 
+    if(_params.isQuery){
+        for(auto&i:usbDrives) zInfo("usbdrive:"+i.toString());
+        return OK;
+    }
 
     UsbDriveModel usbdrive;
 
@@ -62,7 +69,7 @@ int Work1::doWork()
         }
     } else if(usbDrives.count()==1){
         usbdrive = usbDrives[0];
-        zInfo("usbdrive: "+usbdrive.toString());
+        zInfo("usbdrive:"+usbdrive.toString());
     } else{
         usbdrive=UsbDriveModel();
     }
@@ -104,7 +111,7 @@ int Work1::doWork()
     auto fn =  QDir(working_path).filePath(_params.ofile);
     QString shaFn = fn+".sha256";
     auto sha_tmp_fn = QDir(working_path).filePath("temp.sha256");
-    //QString csvFn = fn+".csv";
+    //QString csvFn = fn+".csv";    
 
     // ha van már ilyen file, temp és sha, töröljük
     TextFileHelper::Delete(fn);
@@ -347,7 +354,7 @@ QList<UsbDriveModel> Work1::GetUsbDrives()
 
     if(out.exitCode) return e;
     if(out.stdOut.isEmpty()) return e;
-    zInfo("devices:\n");
+    //zInfo("devices:\n");
 
     for(auto&i:out.stdOut.split('\n'))
     {        
@@ -378,7 +385,7 @@ QList<UsbDriveModel> Work1::GetUsbDrives()
 
             m.partitions = GetPartitions(j[1]);
 
-            zInfo("device:"+m.toString());
+            //zInfo("device:"+m.toString());
             e.append(m);
         }
 
@@ -386,19 +393,25 @@ QList<UsbDriveModel> Work1::GetUsbDrives()
             for(auto&partition:m.partitions){
                 auto mountPoint = GetMountPoint(partition.partPath, partition.label);
 
-                if(!mountPoint.isEmpty()){
-                    //trymount
-
-                    mountPoint = Mount(partition.partPath);
+                if(mountPoint.isEmpty()){
+                    auto mp2 = MkMountPoint();
+                    bool mount_ok = MountHelper::Mount(partition.partPath, mp2);
+                    if(!mount_ok){
+                        RmMountPoint(mp2);
+                        zInfo("cannot mount partition:"+partition.toString());
+                        continue;
+                    }
+                    mountPoint = mp2;
                 }
 
-                if(mountPoint.isEmpty())
-                {
-                    zInfo("cannot mount partition:"+partition.toString());
-                    continue;
-                }
 
-                //partition.project = GetProject(mountPoint);
+                QString project = GetProject(mountPoint);
+
+                bool umount_ok = MountHelper::UMount(mountPoint);
+                if(umount_ok){
+                    RmMountPoint(mountPoint);
+                }
+                partition.project = project;
             }
         }
     }
@@ -406,16 +419,40 @@ QList<UsbDriveModel> Work1::GetUsbDrives()
     return e;
 }
 
- QString Work1::Mount(const QString& partPath){
+QString Work1::MkMountPoint(){
+    static int counter;
 
-     static int counter;
+    QString mountPoint = QStringLiteral("/mnt/mountpoint_%1").arg(counter++);
 
-     QString mountPoint = QStringLiteral("/mnt/mountpoint_%1").arg(counter++);
+    QString cmd = QStringLiteral("mkdir -p %1").arg(mountPoint);
 
-     QString cmd = QStringLiteral("mkdir %1").arg(mountPoint);
+    ProcessHelper::ShellExecuteSudo(cmd);
 
+    return mountPoint;
+}
 
-     return mountPoint;
+ void Work1::RmMountPoint(const QString &mountPoint) {
+     QString cmd = QStringLiteral("rmdir %1").arg(mountPoint);
+     ProcessHelper::ShellExecuteSudo(cmd);
+ }
+
+ QString Work1::GetProject(const QString &path)
+ {
+     QString cmd = QStringLiteral("readlink %1/home/pi/run").arg(path);
+     ProcessHelper::Output out = ProcessHelper::ShellExecuteSudo(cmd);
+
+     if(out.stdOut.isEmpty()) return{};
+     QStringList words = out.stdOut.split("/");
+     QString p;
+     if(words.count()>=3){
+         p=words[3];
+     }
+     if(words.count()>=4){
+         p+=":"+words.last().trimmed();
+     }
+     if(p.isEmpty())
+         p = out.stdOut;
+     return p;
  }
 
 UsbDriveModel Work1::SelectUsbDrive(const QList<UsbDriveModel> &usbdrives)
@@ -517,15 +554,15 @@ QString UsbDriveModel::toString() const
         usbn = usbPath.mid(ix0+1);
     } else{
         usbn =  usbPath;
-    }
+    }        
 
     QString labels="";    
     for(auto&p:partitions){
-        if(!labels.isEmpty()) labels+=":";
+        if(!labels.isEmpty()) labels+="|";
         labels += p.toString();
     }
-    QString msg =  n+": "+usbn;
-    if(!labels.isEmpty())+": "+labels;
+    QString msg = n+":"+usbn.replace(':','_');
+    if(!labels.isEmpty()) msg+="|"+labels;
     return msg;
 }
 

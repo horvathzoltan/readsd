@@ -35,6 +35,7 @@ public:
         QString passwd;
         bool force;
         bool usbSelect;
+        bool isQuery;
 
         void Parse(QCommandLineParser *p)
         {
@@ -43,6 +44,7 @@ public:
             passwd = p->value("s");
             force = p->isSet("f");
             usbSelect = p->isSet("b");
+            isQuery = p->isSet("q");
         }
     };
 
@@ -85,8 +87,13 @@ public:
 
     static QList<PartitionModel> GetPartitions(const QString& dev);
     static QString GetMountPoint(const QString& dev, const QString& label);
-
-    static QString Mount(const QString& partPath);
+    
+    //static QString Mount(const QString& partPath);
+    //static void UMount(const QString& mountPoint);
+    static QString MkMountPoint();
+    static void RmMountPoint(const QString& path);
+private:
+    static QString GetProject(const QString& path);
 };
 
 #endif // WORK1_H

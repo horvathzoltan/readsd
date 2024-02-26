@@ -1,4 +1,5 @@
 #include "mounthelper.h"
+#include "processhelper.h"
 /*
 bool MountHelper::isMounted(MountPathTypes mtype, QString* s){
     auto p = _mountPaths.value(mtype);
@@ -17,16 +18,23 @@ bool MountHelper::isMounted(MountPathTypes mtype, QString* s){
     if(s) *s=a[1];
     return a[1]!="/";
 }
-
-QString MountHelper::Mount(const QString& host,
-                                           MountPathTypes mtype){
-    auto p = _mountPaths.value(mtype);
-    QString cmd =
-        QStringLiteral(R"(sudo mount -t cifs //%1/%2 %3 -o username=pi,password=kercerece55,domain=WORKGROUP,gid=users,uid=500,rw,dir_mode=0777,file_mode=0666)").arg(host).arg(p.remoteName).arg(p.localPath);
-    auto out = ProcessHelper::Execute(cmd);
-    if(!out.exitCode) return MountState::Ok;
-    if(out.stdErr.isEmpty()) return MountState::Ok;
-
-    return {MountState::MountError,out.ToString()};
-}
 */
+bool MountHelper::Mount(const QString& devpath, const QString& mountpath){
+    QString cmd = QStringLiteral(R"(mount %1 %3)").arg(devpath,mountpath);
+    auto out = ProcessHelper::ShellExecuteSudo(cmd);
+
+    if(out.exitCode) return false;
+    if(!out.stdErr.isEmpty()) return false;
+
+    return true;
+}
+
+bool MountHelper::UMount(const QString& mountpath){
+    QString cmd = QStringLiteral(R"(umount %1)").arg(mountpath);
+    auto out = ProcessHelper::ShellExecuteSudo(cmd);
+
+    if(out.exitCode) return false;
+    if(!out.stdErr.isEmpty()) return false;
+
+    return true;
+}

@@ -38,6 +38,7 @@ auto main(int argc, char *argv[]) -> int
         {{"s",QStringLiteral("passwd")},QStringLiteral("secret"),"passwd"},
         {{"f",QStringLiteral("force")},QStringLiteral("no ask")},
         {{"b",QStringLiteral("usbselect")},QStringLiteral("enable usb drive select if more available")},
+        {{"q",QStringLiteral("query")},QStringLiteral("query only")},
         };
     parser.addHelpOption();
     parser.addVersionOption();

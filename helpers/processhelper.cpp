@@ -1,4 +1,5 @@
 #include "processhelper.h"
+#include "qdebug.h"
 //#include "helpers/logger.h"
 
 #include <QCoreApplication>
@@ -284,8 +285,8 @@ ProcessHelper::Output ProcessHelper::ShellExecute(const QString &cmd, int timeou
             std::cerr << d.toStdString();
             //o2.append(d.toStdString());
             //o2.append(d.toStdString());
-
         }
+        std::cerr << QStringLiteral("\n").toStdString();
         //zInfo("opp");
     };
 
@@ -312,6 +313,6 @@ ProcessHelper::Output ProcessHelper::ShellExecute(const QString &cmd, int timeou
 ProcessHelper::Output ProcessHelper::ShellExecuteSudo(const QString &cmd, int timeout_millis){
     if(_password.isEmpty()) return Output(-1, "ProcessHelper is not inited");
 
-    QString cmd2 = QStringLiteral("echo \"%1\" | sudo -S %2").arg(_password).arg(cmd);
+    QString cmd2 = QStringLiteral("echo \"%1\" | sudo -S %2").arg(_password).arg(cmd);    
     return ShellExecute(cmd2, timeout_millis);
 }

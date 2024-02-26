@@ -1,7 +1,6 @@
 #include <QCoreApplication>
 #include "helpers/logger.h"
 #include "helpers/signalhelper.h"
-//#include "helpers/commandlineparserhelper.h"
 #include "helpers/coreappworker.h"
 
 #include "work1.h"
@@ -9,7 +8,15 @@
 #include "helpers/stringify.h"
 
 
+/*
+started readsd as zoli
+[sudo] zoli jelszava:
+usbdrive:/dev/sdc:1-1.4.1_1.0|/dev/sdc1:bootfs|/dev/sdc2:rootfs:infopanel2:infopanel2_1704
+usbdrive:/dev/sdd:1-1.4.2_1.0|/dev/sdd1:teszt2
+ok
 
+Process exited with code: 0
+*/
 auto main(int argc, char *argv[]) -> int
 {
 #if defined (STRING) && defined (TARGI)

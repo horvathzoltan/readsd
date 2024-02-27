@@ -186,8 +186,8 @@ int Work1::sha256sumDevice(const QString& fn, int r, qint64 b, const QString& sh
 
 QString Work1::GetUsbPath(const QString &dev)
 {
-    auto cmd = QStringLiteral("udevadm info -q path");
-    cmd+=" "+dev;
+    auto cmd = QStringLiteral("udevadm info -q path %1").arg(dev);
+
     //auto m2 = ProcessHelper::Model::Parse(cmd);
     auto out = ProcessHelper::ShellExecute(cmd);
     if(out.exitCode) return "";

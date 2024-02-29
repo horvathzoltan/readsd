@@ -36,7 +36,8 @@ auto main(int argc, char *argv[]) -> int
     Logger::Init(Logger::ErrLevel::INFO, Logger::DbgLevel::TRACE, true, true);
 
     QString user = UserHelper::GetUser();
-    zInfo(QStringLiteral("started ")+target+" as "+(!user.isEmpty()?user:"anonymous"));
+    QString startmsg = QStringLiteral("started ")+target+" as "+(!user.isEmpty()?user:"anonymous");
+    zInfo(startmsg);
 
     QCommandLineParser parser;
     QList<QCommandLineOption> options{

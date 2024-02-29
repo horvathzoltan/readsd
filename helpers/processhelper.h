@@ -26,7 +26,7 @@ public:
         int exitCode = 1;
         QString ToString();
 
-        int elapsedMillis;
+        qint64 elapsedMillis;
 
         Output(){}
 

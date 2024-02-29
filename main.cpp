@@ -2,7 +2,7 @@
 #include "helpers/logger.h"
 #include "helpers/signalhelper.h"
 #include "helpers/coreappworker.h"
-
+#include "helpers/userhelper.h"
 #include "work1.h"
 #include "typekey.h"
 #include "helpers/stringify.h"
@@ -35,8 +35,8 @@ auto main(int argc, char *argv[]) -> int
     SignalHelper::setShutDownSignal(SignalHelper::SIGTERM_); // shut down on killall
     Logger::Init(Logger::ErrLevel::INFO, Logger::DbgLevel::TRACE, true, true);
 
-    QString user = qgetenv("USER");
-    zInfo(QStringLiteral("started ")+target+" as "+user);
+    QString user = UserHelper::GetUser();
+    zInfo(QStringLiteral("started ")+target+" as "+(!user.isEmpty()?user:"anonymous"));
 
     QCommandLineParser parser;
     QList<QCommandLineOption> options{

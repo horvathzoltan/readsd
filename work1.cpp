@@ -517,7 +517,7 @@ bool Work1::UmountParts(const QStringList &src)
 
 int Work1::dd(const QString& src, const QString& dst, int bs, int count, QString *mnt)
 {
-    zInfo("copying...");//:"+src+"->"+dst );
+    zInfo("copying:"+src+"->"+dst );
 //    QString e;
     //oflag sync
     auto cmd_dd = QStringLiteral("dd of=%1 bs=%3 count=%4 if=%2 status=progress conv=fdatasync").arg(dst,src).arg(bs).arg(count);

@@ -7,6 +7,8 @@
 #include "typekey.h"
 #include "helpers/stringify.h"
 
+// ./readsd -p /media/pi/butyok2/clone/ -o img56 -s Aladar123 -f
+// ./readsd -p /home/zoli/aaa/ -o img56 -s Aladar123 -f
 
 /*
 started readsd as zoli

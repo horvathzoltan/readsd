@@ -17,9 +17,6 @@
 
 Work1::Params Work1::_params;
 
-// ./readsd -p /media/pi/butyok2/clone/ -o img56 -s Aladar123 -f
-// ./readsd -p /home/zoli/aaa/ -o img56 -s Aladar123 -f
-
 int Work1::doWork()
 {
     //bool ok;

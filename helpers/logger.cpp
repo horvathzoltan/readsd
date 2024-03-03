@@ -297,6 +297,12 @@ void Logger::info2(const QStringList& msgl, const LocInfo& locinfo)
     }
 }
 
+void Logger::message(const QString& msg)
+{
+    QTextStream cout(stdout);
+    cout << msg.toUtf8() << Qt::endl;
+}
+
 
 void Logger::error2(const QString& msg,  const LocInfo& locinfo){
     if(!_isInited) return;

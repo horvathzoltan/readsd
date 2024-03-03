@@ -52,7 +52,7 @@ int Work1::doWork()
     if(usbDrives.isEmpty()) return ISEMPTY;
 
     if(_params.isQuery){
-        for(auto&i:usbDrives) zInfo("usbdrive:"+i.toString());
+        for(auto&i:usbDrives) zMessage("usbdrive:"+i.toString());
         return OK;
     }
 
@@ -141,9 +141,11 @@ int Work1::doWork()
     QString sha_img = getSha(shaFn);
     if(sha_tmp.isEmpty()) return NO_CHECK1;
 
-    zInfo(QStringLiteral("sha_tmp: ")+sha_tmp)
-    zInfo(QStringLiteral("sha_img: ")+sha_img)
-        if(sha_tmp!=sha_img) return CHECKSUM_ERROR;
+    zMessage(QStringLiteral("sha_tmp: ")+sha_tmp);
+    zMessage(QStringLiteral("sha_img: ")+sha_img);
+    bool sha_ok = sha_tmp==sha_img;
+    zMessage(QStringLiteral("sha_check: ")+(sha_ok?"ok":"failed"));
+    if(!sha_ok) return CHECKSUM_ERROR;
 
     return OK;
 }

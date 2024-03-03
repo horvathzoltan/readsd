@@ -27,6 +27,8 @@
 #define zWarning2(msg,i) Logger::warning2((msg), getLocInfo,(i));
 #define zInfo2(msg,i) Logger::info2((msg), getLocInfo,(i));
 
+#define zMessage(msg) Logger::message((msg));
+
 class Logger
 {
 public:
@@ -77,6 +79,7 @@ public:
     static void trace2(const LocInfo& l);
     static void info2(const QString& msg, const LocInfo& l);
     static void info2(const QStringList& msg, const LocInfo& l);
+    static void message(const QString& msg);
 };
 
 #endif // LOGGER_H

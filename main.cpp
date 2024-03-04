@@ -46,6 +46,7 @@ auto main(int argc, char *argv[]) -> int
         {{"o",QStringLiteral("output")},QStringLiteral("image file name"),"output"},
         {{"p",QStringLiteral("path")},QStringLiteral("working path"),"path"},
         {{"s",QStringLiteral("passwd")},QStringLiteral("secret"),"passwd"},
+        {{"u",QStringLiteral("usbdrive")},QStringLiteral("usbdrive to read"),"usbdrive"},
         {{"f",QStringLiteral("force")},QStringLiteral("no ask")},
         {{"b",QStringLiteral("usbselect")},QStringLiteral("enable usb drive select if more available")},
         {{"q",QStringLiteral("query")},QStringLiteral("query only")},

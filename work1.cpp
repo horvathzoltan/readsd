@@ -57,20 +57,23 @@ int Work1::doWork()
     }
 
     UsbDriveModel usbdrive;
-
-    if(usbDrives.count()>1){
-        if(_params.usbSelect){
-            usbdrive = SelectUsbDrive(usbDrives);
+    if(_params.usbDrive.isEmpty()){
+        if(usbDrives.count()>1){
+            if(_params.usbSelect){
+                usbdrive = SelectUsbDrive(usbDrives);
+            } else{
+                return TOOMUCH_USBDRIVE;
+            }
+        } else if(usbDrives.count()==1){
+            usbdrive = usbDrives[0];
+            zInfo("usbdrive:"+usbdrive.toString());
         } else{
-            return TOOMUCH_USBDRIVE;
+            usbdrive=UsbDriveModel();
         }
-    } else if(usbDrives.count()==1){
-        usbdrive = usbDrives[0];
-        zInfo("usbdrive:"+usbdrive.toString());
-    } else{
-        usbdrive=UsbDriveModel();
     }
-
+    else{
+        usbdrive = SelectUsbDrive2(usbDrives, _params.usbDrive);
+    }
     if(!usbdrive.isValid()) return NO_USBDRIVE;
 
     int r=55;
@@ -467,6 +470,14 @@ UsbDriveModel Work1::SelectUsbDrive(const QList<UsbDriveModel> &usbdrives)
     if(!isok) return UsbDriveModel();
     if(ix<1||ix>j) return UsbDriveModel();
     return usbdrives[ix-1];
+}
+
+UsbDriveModel Work1::SelectUsbDrive2(const QList<UsbDriveModel> &usbdrives, const QString& usbDrivePath)
+{
+    for(auto&d:usbdrives){
+        if(d.usbPath==usbDrivePath) return d;
+    }
+    return UsbDriveModel();
 }
 
 bool Work1::ConfirmYes()

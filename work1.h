@@ -36,12 +36,14 @@ public:
         bool force;
         bool usbSelect;
         bool isQuery;
+        QString usbDrive;
 
         void Parse(QCommandLineParser *p)
         {
             ofile = p->value("o");
             path = p->value("p");
             passwd = p->value("s");
+            passwd = p->value("u");
             force = p->isSet("f");
             usbSelect = p->isSet("b");
             isQuery = p->isSet("q");
@@ -72,6 +74,7 @@ public:
 
     static QList<UsbDriveModel> GetUsbDrives();
     static UsbDriveModel SelectUsbDrive(const QList<UsbDriveModel>& usbdrives);
+    static UsbDriveModel SelectUsbDrive2(const QList<UsbDriveModel>& usbdrives, const QString&usbDrivePath);
     static int GetLastRecord(const QString &drive, int* units);
     static int dd(const QString &src, const QString &dst, int bs, int count, QString *msg);
     static bool ConfirmYes();

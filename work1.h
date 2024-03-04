@@ -36,14 +36,14 @@ public:
         bool force;
         bool usbSelect;
         bool isQuery;
-        QString usbDrive;
+        QString usbDrivePath;
 
         void Parse(QCommandLineParser *p)
         {
             ofile = p->value("o");
             path = p->value("p");
             passwd = p->value("s");
-            passwd = p->value("u");
+            usbDrivePath = p->value("u");
             force = p->isSet("f");
             usbSelect = p->isSet("b");
             isQuery = p->isSet("q");

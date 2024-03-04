@@ -57,7 +57,7 @@ int Work1::doWork()
     }
 
     UsbDriveModel usbdrive;
-    if(_params.usbDrive.isEmpty()){
+    if(_params.usbDrivePath.isEmpty()){
         if(usbDrives.count()>1){
             if(_params.usbSelect){
                 usbdrive = SelectUsbDrive(usbDrives);
@@ -72,7 +72,7 @@ int Work1::doWork()
         }
     }
     else{
-        usbdrive = SelectUsbDrive2(usbDrives, _params.usbDrive);
+        usbdrive = SelectUsbDrive2(usbDrives, _params.usbDrivePath);
     }
     if(!usbdrive.isValid()) return NO_USBDRIVE;
 

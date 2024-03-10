@@ -58,6 +58,7 @@ int Work1::doWork()
 
     UsbDriveModel usbdrive;
     if(_params.usbDrivePath.isEmpty()){
+        zInfo("no usbDrivePath")
         if(usbDrives.count()>1){
             if(_params.usbSelect){
                 usbdrive = SelectUsbDrive(usbDrives);
@@ -72,6 +73,7 @@ int Work1::doWork()
         }
     }
     else{
+        zInfo("usbDrivePath:"+_params.usbDrivePath)
         usbdrive = SelectUsbDrive2(usbDrives, _params.usbDrivePath);
     }
     if(!usbdrive.isValid()) return NO_USBDRIVE;
@@ -475,7 +477,8 @@ UsbDriveModel Work1::SelectUsbDrive(const QList<UsbDriveModel> &usbdrives)
 UsbDriveModel Work1::SelectUsbDrive2(const QList<UsbDriveModel> &usbdrives, const QString& usbDrivePath)
 {
     for(auto&d:usbdrives){
-        if(d.usbPath==usbDrivePath) return d;
+        QString usbp0 = d.GetUsbDevicePath();
+        if(usbp0==usbDrivePath) return d;
     }
     return UsbDriveModel();
 }
@@ -552,10 +555,7 @@ int Work1::dd(const QString& src, const QString& dst, int bs, int count, QString
 // 0123
 // abc/
 
-QString UsbDriveModel::toString() const
-{
-    QString n =  devicePath;
-
+QString UsbDriveModel::GetUsbDevicePath() const{
     QString usbn;
     int ix0 = usbPath.lastIndexOf('/');
     int maxix = usbPath.length()-1;
@@ -564,14 +564,32 @@ QString UsbDriveModel::toString() const
         usbn = usbPath.mid(ix0+1);
     } else{
         usbn =  usbPath;
-    }        
+    }
+
+    return usbn.replace(':','_');
+}
+
+QString UsbDriveModel::toString() const
+{
+    QString n =  devicePath;
+
+    /*QString usbn;
+    int ix0 = usbPath.lastIndexOf('/');
+    int maxix = usbPath.length()-1;
+
+    if(ix0>=0 && ix0<maxix){
+        usbn = usbPath.mid(ix0+1);
+    } else{
+        usbn =  usbPath;
+    } */
+    QString usbn = GetUsbDevicePath();
 
     QString labels="";    
     for(auto&p:partitions){
         if(!labels.isEmpty()) labels+="|";
         labels += p.toString();
     }
-    QString msg = n+":"+usbn.replace(':','_');
+    QString msg = n+":"+usbn;//.replace(':','_');
     if(!labels.isEmpty()) msg+="|"+labels;
     return msg;
 }

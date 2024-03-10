@@ -23,6 +23,7 @@ struct UsbDriveModel{
 
     QString toString() const;
     bool isValid();
+    QString GetUsbDevicePath() const;
 };
 
 class Work1

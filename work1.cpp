@@ -352,7 +352,7 @@ QList<UsbDriveModel> Work1::GetUsbDrives()
 {
     QList<UsbDriveModel> e;
 
-    auto cmd = QStringLiteral("lsblk -dbro name,path,type,tran,rm,vendor,model,phy-sec,size,mountpoint");
+    auto cmd = QStringLiteral("lsblk -dbro name,path,type,tran,rm,vendor,model,phy-sec,size,mountpoint,serial");
     //auto m2 = ProcessHelper::Model::Parse(cmd);
     auto out = ProcessHelper::ShellExecuteSudo(cmd);
 
@@ -389,6 +389,7 @@ QList<UsbDriveModel> Work1::GetUsbDrives()
 
             m.partitions = GetPartitions(j[1]);
 
+            m.serial = j[10];
             //zInfo("device:"+m.toString());
             e.append(m);
         }
@@ -589,7 +590,7 @@ QString UsbDriveModel::toString() const
         if(!labels.isEmpty()) labels+="|";
         labels += p.toString();
     }
-    QString msg = n+":"+usbn;//.replace(':','_');
+    QString msg = n+":"+usbn+":"+serial;//.replace(':','_');
     if(!labels.isEmpty()) msg+="|"+labels;
     return msg;
 }

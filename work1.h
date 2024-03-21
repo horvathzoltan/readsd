@@ -18,12 +18,13 @@ struct PartitionModel{
 struct UsbDriveModel{
     QString devicePath;
     QString usbPath;
-
+    QString serial;
     QList<PartitionModel> partitions;
 
     QString toString() const;
     bool isValid();
     QString GetUsbDevicePath() const;
+
 };
 
 class Work1

@@ -75,6 +75,9 @@ public:
     static Params _params;
 
     static QList<UsbDriveModel> GetUsbDrives();
+    static UsbDriveModel GetUsbDrives2(const QString& i);
+    static void GetUsbDrives3(UsbDriveModel*m);
+    //static void GetUsbDrives3(UsbDriveModel*m);
     static UsbDriveModel SelectUsbDrive(const QList<UsbDriveModel>& usbdrives);
     static UsbDriveModel SelectUsbDrive2(const QList<UsbDriveModel>& usbdrives, const QString&usbDrivePath);
     static int GetLastRecord(const QString &drive, int* units);

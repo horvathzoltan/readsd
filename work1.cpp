@@ -1,4 +1,5 @@
 #include "work1.h"
+#include "work1threads.h"
 #include "helpers/logger.h"
 #include "helpers/textfilehelper.h"
 #include "helpers/processhelper.h"
@@ -11,6 +12,7 @@
 #include <QProcess>
 #include <QCoreApplication>
 #include <QDir>
+#include <QElapsedTimer>
 
 #include <helpers/mounthelper.h>
 #include <helpers/processhelper.h>
@@ -352,76 +354,160 @@ QList<UsbDriveModel> Work1::GetUsbDrives()
 {
     QList<UsbDriveModel> e;
 
+    QElapsedTimer t2;
+
+    t2.start();
+
     auto cmd = QStringLiteral("lsblk -dbro name,path,type,tran,rm,vendor,model,phy-sec,size,mountpoint,serial");
     //auto m2 = ProcessHelper::Model::Parse(cmd);
     auto out = ProcessHelper::ShellExecuteSudo(cmd);
+
+    zInfo("t2 lsblk:"+QString::number(t2.elapsed()));
 
     if(out.exitCode) return e;
     if(out.stdOut.isEmpty()) return e;
     //zInfo("devices:\n");
 
     for(auto&i:out.stdOut.split('\n'))
-    {        
+    {
         if(i.isEmpty()) continue;
-        auto j=i.split(' ');
-
-        bool isBoot = j[9]=='/'||j[9]=="/boot";
-
-        if(isBoot) continue;
-
-        bool isRemovableDisk = j[2]==QLatin1String("disk")&&
-                     j[4]==QLatin1String("1");
-
-        if(!isRemovableDisk) continue;
-
-        bool isUsb = j[3]==QLatin1String("usb");
-
-        bool isMmc = j[0].startsWith("mmc");
-
-        bool ok;
-        qint64 size = j[8].toLongLong(&ok);
-        bool hasCard = ok && size>0;
-
-        if(isRemovableDisk && (isUsb || isMmc) && hasCard){
-            UsbDriveModel m;
-            m.devicePath = j[1];
-            m.usbPath = GetUsbPath(j[1]);
-
-            m.partitions = GetPartitions(j[1]);
-
-            m.serial = j[10];
-            //zInfo("device:"+m.toString());
+        UsbDriveModel m = GetUsbDrives2(i);
+        if(m.isValid()){
             e.append(m);
         }
+    }
+    zInfo("t2 GetUsbDrives2:"+QString::number(t2.elapsed()));
 
-        for(auto&m:e){
-            for(auto&partition:m.partitions){
-                auto mountPoint = GetMountPoint(partition.partPath, partition.label);
-
-                if(mountPoint.isEmpty()){
-                    auto mp2 = MkMountPoint();
-                    bool mount_ok = MountHelper::Mount(partition.partPath, mp2);
-                    if(!mount_ok){
-                        RmMountPoint(mp2);
-                        zInfo("cannot mount partition:"+partition.toString());
-                        continue;
-                    }
-                    mountPoint = mp2;
-                }
-
-
-                QString project = GetProject(mountPoint);
-
-                bool umount_ok = MountHelper::UMount(mountPoint);
-                if(umount_ok){
-                    RmMountPoint(mountPoint);
-                }
-                partition.project = project;
-            }
-        }
+    QList<Work1Thread*> threads;
+    for(auto&m:e){
+        auto thread = new Work1Thread();
+        threads.append(thread);
+        thread->setM(&m);
+        thread->start();
     }
 
+    // for(auto&m:threads){
+    //      m->start();
+    // }
+
+    for(auto&m:threads){
+        m->wait(5000);
+        m->deleteLater();
+    }
+
+    // QList<Work1Controller*> controllers;
+    // //Work1Controller* controller;
+    // for(auto&m:e){
+    //     //GetUsbDrives3(&m);
+    //     auto controller = new Work1Controller(&m);
+    //     controllers.append(controller);
+
+    // }
+
+    // for(Work1Controller *controller : controllers){
+    //     controller->operate();
+    //     break;
+    // }
+
+    // while(1){
+    //     bool ready=true;
+    //     for (Work1Controller *controller : controllers) {
+    //         if(!controller->finished()){ ready = false; break;}
+    //     }
+    //     if(ready) break;
+    // }
+
+    // for (Work1Controller *controller : controllers) {
+    //     delete controller;
+    // }
+
+    zInfo("t2 GetUsbDrives3:"+QString::number(t2.elapsed()));
     return e;
+}
+
+UsbDriveModel Work1::GetUsbDrives2(const QString& i){
+    QElapsedTimer t;
+    t.start();
+
+    auto j=i.split(' ');
+
+    bool isBoot = j[9]=='/'||j[9]=="/boot";
+
+    if(isBoot) return{};
+
+    bool isRemovableDisk = j[2]==QLatin1String("disk")&&
+                 j[4]==QLatin1String("1");
+
+    if(!isRemovableDisk) return{};
+
+    bool isUsb = j[3]==QLatin1String("usb");
+
+    bool isMmc = j[0].startsWith("mmc");
+
+    bool ok;
+    qint64 size = j[8].toLongLong(&ok);
+    bool hasCard = ok && size>0;
+
+    if(isRemovableDisk && (isUsb || isMmc) && hasCard){
+        UsbDriveModel m;
+        m.devicePath = j[1];
+        t.restart();
+        m.usbPath = GetUsbPath(j[1]);
+        zInfo("t GetUsbPath:"+QString::number(t.elapsed()));
+
+        t.restart();
+        m.partitions = GetPartitions(j[1]);
+        zInfo("t GetPartitions:"+QString::number(t.elapsed()));
+
+        m.serial = j[10];
+        //zInfo("device:"+m.toString());
+        //e.append(m);
+        return m;
+    }
+
+    return{};
+}
+
+void Work1::GetUsbDrives3(UsbDriveModel *m){
+    QElapsedTimer t;
+    t.start();
+
+    //for(auto&m:e){
+    for(auto&partition:m->partitions){
+        t.restart();
+        auto mountPoint = GetMountPoint(partition.partPath, partition.label);
+        zInfo("t GetMountPoint:"+QString::number(t.elapsed()));
+
+        if(mountPoint.isEmpty()){
+            auto mp2 = MkMountPoint();
+            t.restart();
+            bool mount_ok = MountHelper::Mount(partition.partPath, mp2);
+            zInfo("t Mount:"+QString::number(t.elapsed())+" "+mp2);
+
+            if(!mount_ok){
+                t.restart();
+                RmMountPoint(mp2);
+                zInfo("t RmMountPoint err:"+QString::number(t.elapsed()));
+                zInfo("cannot mount partition:"+partition.toString());
+                continue;
+            }
+            mountPoint = mp2;
+        }
+
+        t.restart();
+        QString project = GetProject(mountPoint);
+        zInfo("t GetProject:"+QString::number(t.elapsed()));
+
+        bool umount_ok = MountHelper::UMount(mountPoint);
+        if(umount_ok){
+            t.restart();
+            RmMountPoint(mountPoint);
+            zInfo("t RmMountPoint ok:"+QString::number(t.elapsed()));
+        }
+        partition.project = project;
+    }
+   // }
+    return ;
 }
 
 QString Work1::MkMountPoint(){

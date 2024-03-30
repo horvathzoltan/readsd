@@ -22,7 +22,8 @@ SOURCES += \
         helpers/textfilehelper.cpp \
         helpers/userhelper.cpp \
         main.cpp \
-        work1.cpp
+        work1.cpp \
+        work1threads.cpp
 
 HEADERS += \
     helpers/coreappworker.h \
@@ -34,7 +35,8 @@ HEADERS += \
     helpers/textfilehelper.h \
     helpers/userhelper.h \
     typekey.h \
-    work1.h
+    work1.h \
+    work1threads.h
 
 
 

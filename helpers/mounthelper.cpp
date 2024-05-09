@@ -21,12 +21,13 @@ bool MountHelper::isMounted(MountPathTypes mtype, QString* s){
 */
 bool MountHelper::Mount(const QString& devpath, const QString& mountpath){
     QString cmd = QStringLiteral(R"(mount %1 %3)").arg(devpath,mountpath);
-    auto out = ProcessHelper::ShellExecuteSudo(cmd);
+    auto out = ProcessHelper::ShellExecuteSudo(cmd, 1000);
 
-    if(out.exitCode) return false;
-    if(!out.stdErr.isEmpty()) return false;
+    bool retVal = true;
+    if(out.exitCode) retVal=false;
+    if(!out.stdErr.isEmpty()) retVal=false;
 
-    return true;
+    return retVal;
 }
 
 bool MountHelper::UMount(const QString& mountpath){

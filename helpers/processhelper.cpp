@@ -297,15 +297,20 @@ ProcessHelper::Output ProcessHelper::ShellExecute(const QString &cmd, int timeou
 
     process.start("/bin/sh", {"-c", cmd});
     if(!process.waitForStarted()) return{};
-    process.waitForFinished(timeout_millis);
+    bool isFinished = process.waitForFinished(timeout_millis);
 
     QObject::disconnect(&process, &QIODevice::readyRead, nullptr, nullptr);
 
     ProcessHelper::Output o;
     o.elapsedMillis = t.elapsed();
-    o.stdOut  = process.readAllStandardOutput();
-    o.stdErr = process.readAllStandardError();
-    o.exitCode = process.exitCode();
+   // if(isFinished){
+        o.stdOut  = process.readAllStandardOutput();
+        o.stdErr = process.readAllStandardError();
+        o.exitCode = process.exitCode();
+    //} else{
+    //    o.stdErr = "timeout";
+    //    o.exitCode = -1;
+    //}
 
     return o;
 }

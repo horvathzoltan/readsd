@@ -39,6 +39,7 @@ public:
         bool usbSelect;
         bool isQuery;
         QString usbDrivePath;
+        QString mountData;
 
         void Parse(QCommandLineParser *p)
         {
@@ -49,6 +50,7 @@ public:
             force = p->isSet("f");
             usbSelect = p->isSet("b");
             isQuery = p->isSet("q");
+            mountData = p->value("m");
         }
     };
 
@@ -75,6 +77,8 @@ public:
     static Params _params;
 
     static QList<UsbDriveModel> GetUsbDrives();
+    static UsbDriveModel GetUsbDrive(const QString& devPath);
+
     static UsbDriveModel GetUsbDrives2(const QString& i);
     static void GetUsbDrives3(UsbDriveModel*m);
     //static void GetUsbDrives3(UsbDriveModel*m);

@@ -48,6 +48,11 @@ int Work1::doWork()
     QString working_path = _params.path;
     if(working_path.isEmpty()) working_path = QDir::currentPath();
 
+    if(!_params.mountData.isEmpty()){
+        auto usbDrive = GetUsbDrive(_params.mountData);
+        zMessage("usbdrive:"+usbDrive.toString());
+        return OK;
+    }
     // megszerzi a block deviceokat
     auto usbDrives = GetUsbDrives();
 
@@ -433,6 +438,19 @@ QList<UsbDriveModel> Work1::GetUsbDrives()
     return e;
 }
 
+UsbDriveModel Work1::GetUsbDrive(const QString &devPath)
+{
+    UsbDriveModel m;
+    m.devicePath = devPath;
+
+    m.usbPath = GetUsbPath(devPath);
+    m.partitions = GetPartitions(devPath);
+    m.serial = "";
+
+    GetUsbDrives3(&m);
+    return m;
+}
+
 UsbDriveModel Work1::GetUsbDrives2(const QString& i){
    // QElapsedTimer t;
    // t.start();
@@ -651,7 +669,8 @@ int Work1::dd(const QString& src, const QString& dst, int bs, int count, QString
 // abc/
 
 QString UsbDriveModel::GetUsbDevicePath() const{
-    QString usbn;
+    return usbPath;
+    /*QString usbn;
     int ix0 = usbPath.lastIndexOf('/');
     int maxix = usbPath.length()-1;
 
@@ -661,7 +680,7 @@ QString UsbDriveModel::GetUsbDevicePath() const{
         usbn =  usbPath;
     }
 
-    return usbn.replace(':','_');
+    return usbn.replace(':','_');*/
 }
 
 QString UsbDriveModel::toString() const
@@ -684,7 +703,7 @@ QString UsbDriveModel::toString() const
         if(!labels.isEmpty()) labels+="|";
         labels += p.toString();
     }
-    QString msg = n+":"+usbn+":"+serial;//.replace(':','_');
+    QString msg = n+","+usbn+","+serial;//.replace(':','_');
     if(!labels.isEmpty()) msg+="|"+labels;
     return msg;
 }
@@ -699,7 +718,7 @@ bool UsbDriveModel::isValid()
 QString PartitionModel::toString() const
 {
     QString msg = partPath;
-    if(!label.isEmpty()) msg+=":"+label;
-    if(!project.isEmpty()) msg+=":"+project;
+    if(!label.isEmpty()) msg+=","+label;
+    if(!project.isEmpty()) msg+=","+project;
     return msg;
 }

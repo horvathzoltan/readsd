@@ -50,6 +50,7 @@ auto main(int argc, char *argv[]) -> int
         {{"f",QStringLiteral("force")},QStringLiteral("no ask")},
         {{"b",QStringLiteral("usbselect")},QStringLiteral("enable usb drive select if more available")},
         {{"q",QStringLiteral("query")},QStringLiteral("query only")},
+        {{"m",QStringLiteral("mountdata")},QStringLiteral("mount data"), "mountdata"},
         };
     parser.addHelpOption();
     parser.addVersionOption();

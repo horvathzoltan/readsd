@@ -565,7 +565,7 @@ QString Work1::MkMountPoint(){
          p=words[3];
      }
      if(words.count()>=4){
-         p+=":"+words.last().trimmed();
+         p+=","+words.last().trimmed();
      }
      if(p.isEmpty())
          p = out.stdOut;

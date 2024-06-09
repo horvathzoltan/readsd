@@ -589,8 +589,13 @@ UsbDriveModel Work1::SelectUsbDrive(const QList<UsbDriveModel> &usbdrives)
 
 UsbDriveModel Work1::SelectUsbDrive2(const QList<UsbDriveModel> &usbdrives, const QString& usbDrivePath)
 {
+    zInfo("SelectUsbDrive2:"+usbDrivePath)
     for(auto&d:usbdrives){
-        QString usbp0 = d.GetUsbDevicePath();
+        zInfo("usbDrive:"+d.usbPath);
+    }
+
+    for(auto&d:usbdrives){        
+        QString usbp0 = d.GetUsbDevicePath();    
         if(usbp0==usbDrivePath) return d;
     }
     return UsbDriveModel();
@@ -669,8 +674,8 @@ int Work1::dd(const QString& src, const QString& dst, int bs, int count, QString
 // abc/
 
 QString UsbDriveModel::GetUsbDevicePath() const{
-    return usbPath;
-    /*QString usbn;
+    //return usbPath;
+    QString usbn;
     int ix0 = usbPath.lastIndexOf('/');
     int maxix = usbPath.length()-1;
 
@@ -680,7 +685,7 @@ QString UsbDriveModel::GetUsbDevicePath() const{
         usbn =  usbPath;
     }
 
-    return usbn.replace(':','_');*/
+    return usbn;//.replace(':','_');
 }
 
 QString UsbDriveModel::toString() const
